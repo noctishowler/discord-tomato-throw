@@ -362,8 +362,8 @@ async function buildPatFrame(
   const hand =
     await sharp(PAT_HAND)
       .resize({
-        width: 170,
-        height: 170,
+        width: 205,
+        height: 205,
         fit: "contain",
         background: {
           r: 0,
@@ -407,7 +407,7 @@ async function buildPatFrame(
       },
       {
         input: hand,
-        left: 107,
+        left: 90,
         top: frame.handY
       }
     ])
@@ -434,63 +434,63 @@ async function generateAvatarPatGif(
 
   const frames = [
     {
-      handY: 0,
+      handY: 14,
       avatarWidth: 190,
       avatarHeight: 190,
       avatarY: 176,
       delay: 110
     },
     {
-      handY: 18,
+      handY: 30,
       avatarWidth: 190,
       avatarHeight: 190,
       avatarY: 176,
       delay: 80
     },
     {
-      handY: 36,
+      handY: 46,
       avatarWidth: 190,
       avatarHeight: 190,
       avatarY: 176,
       delay: 70
     },
     {
-      handY: 52,
+      handY: 60,
       avatarWidth: 194,
       avatarHeight: 181,
       avatarY: 185,
       delay: 70
     },
     {
-      handY: 66,
+      handY: 72,
       avatarWidth: 202,
       avatarHeight: 164,
       avatarY: 202,
       delay: 120
     },
     {
-      handY: 56,
+      handY: 62,
       avatarWidth: 196,
       avatarHeight: 177,
       avatarY: 189,
       delay: 70
     },
     {
-      handY: 40,
+      handY: 48,
       avatarWidth: 191,
       avatarHeight: 187,
       avatarY: 179,
       delay: 70
     },
     {
-      handY: 20,
+      handY: 30,
       avatarWidth: 190,
       avatarHeight: 190,
       avatarY: 176,
       delay: 90
     },
     {
-      handY: 0,
+      handY: 14,
       avatarWidth: 190,
       avatarHeight: 190,
       avatarY: 176,
