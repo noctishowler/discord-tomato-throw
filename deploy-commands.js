@@ -28,13 +28,13 @@ const commands = [
     ),
 
   new SlashCommandBuilder()
-    .setName("tomato-tally")
+    .setName("tomatotally")
     .setDescription(
       "See this server's glorious tomato statistics"
     ),
 
   new SlashCommandBuilder()
-    .setName("whoseagoodfloof")
+    .setName("whosagoodfloof")
     .setDescription(
       "Find out who's been giving and receiving all the pats"
     )
@@ -45,9 +45,7 @@ const rest = new REST({
 }).setToken(process.env.DISCORD_TOKEN);
 
 try {
-  console.log(
-    "Registering global Discord commands..."
-  );
+  console.log("Registering global Discord commands...");
 
   await rest.put(
     Routes.applicationCommands(
@@ -59,7 +57,7 @@ try {
   );
 
   console.log(
-    "Registered /tomato, /pat, /tomato-tally, and /whoseagoodfloof globally."
+    "Registered /tomato, /pat, /tomatotally, and /whosagoodfloof globally."
   );
 } catch (error) {
   console.error(error);
