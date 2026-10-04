@@ -1,7 +1,8 @@
 import {
   REST,
   Routes,
-  SlashCommandBuilder
+  SlashCommandBuilder,
+  PermissionFlagsBits
 } from "discord.js";
 
 import "dotenv/config";
@@ -49,6 +50,24 @@ const commands = [
         .setName("target")
         .setDescription("Whose floof stats?")
         .setRequired(true)
+    ),
+
+  new SlashCommandBuilder()
+    .setName("togglejester")
+    .setDescription(
+      "Turn automatic Jester activity on or off"
+    )
+    .setDefaultMemberPermissions(
+      PermissionFlagsBits.ManageGuild
+    ),
+
+  new SlashCommandBuilder()
+    .setName("heavyjester")
+    .setDescription(
+      "Toggle Heavy Jester mode"
+    )
+    .setDefaultMemberPermissions(
+      PermissionFlagsBits.ManageGuild
     )
 ].map(command =>
   command.toJSON()
@@ -76,7 +95,7 @@ try {
   );
 
   console.log(
-    "Registered /tomato, /pat, /tomatotally, /whosagoodfloof, and /checkfloof globally."
+    "Registered Jester commands."
   );
 } catch (error) {
   console.error(error);
