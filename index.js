@@ -44,30 +44,22 @@ const noctisPats =
 
 const giantTomato =
   noctisTomatoes.find(file =>
-    file.endsWith(
-      "15-giant-tomato-rare.gif"
-    )
+    file.endsWith("15-giant-tomato-rare.gif")
   );
 
 const regularNoctisTomatoes =
   noctisTomatoes.filter(file =>
-    !file.endsWith(
-      "15-giant-tomato-rare.gif"
-    )
+    !file.endsWith("15-giant-tomato-rare.gif")
   );
 
 const dontStopPat =
   noctisPats.find(file =>
-    file.endsWith(
-      "09-dont-stop-rare.gif"
-    )
+    file.endsWith("09-dont-stop-rare.gif")
   );
 
 const regularNoctisPats =
   noctisPats.filter(file =>
-    !file.endsWith(
-      "09-dont-stop-rare.gif"
-    )
+    !file.endsWith("09-dont-stop-rare.gif")
   );
 
 /*
@@ -98,9 +90,7 @@ fs.mkdirSync(
 
 function loadScores() {
   try {
-    if (
-      fs.existsSync(SCORE_FILE)
-    ) {
+    if (fs.existsSync(SCORE_FILE)) {
       return JSON.parse(
         fs.readFileSync(
           SCORE_FILE,
@@ -109,11 +99,7 @@ function loadScores() {
       );
     }
 
-    if (
-      fs.existsSync(
-        OLD_SCORE_FILE
-      )
-    ) {
+    if (fs.existsSync(OLD_SCORE_FILE)) {
       console.log(
         "Importing old tomato tally data."
       );
@@ -174,9 +160,7 @@ function ensureUser(
     scores[guildId] = {};
   }
 
-  if (
-    !scores[guildId][user.id]
-  ) {
+  if (!scores[guildId][user.id]) {
     scores[guildId][user.id] = {
       name:
         user.globalName ||
@@ -199,7 +183,6 @@ function ensureUser(
   stats.timesMissed ??= 0;
   stats.throwsHit ??= 0;
   stats.throwsMissed ??= 0;
-
   stats.patsGiven ??= 0;
   stats.patsReceived ??= 0;
 
@@ -269,6 +252,9 @@ function recordPat(
 const PAT_WIDTH = 384;
 const PAT_HEIGHT = 384;
 
+const PAT_HAND =
+  "./assets/pat/hand.PNG";
+
 function createCircleMask(
   width,
   height
@@ -286,79 +272,6 @@ function createCircleMask(
         ry="${height / 2}"
         fill="white"
       />
-    </svg>
-  `);
-}
-
-function createHandSvg() {
-  return Buffer.from(`
-    <svg
-      width="190"
-      height="120"
-      viewBox="0 0 190 120"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <g
-        fill="#F6C84A"
-        stroke="#6B5200"
-        stroke-width="5"
-        stroke-linejoin="round"
-        stroke-linecap="round"
-      >
-        <!-- Palm -->
-        <rect
-          x="48"
-          y="48"
-          width="112"
-          height="46"
-          rx="22"
-        />
-
-        <!-- Fingers laid flat -->
-        <rect
-          x="58"
-          y="30"
-          width="88"
-          height="22"
-          rx="11"
-        />
-
-        <rect
-          x="68"
-          y="18"
-          width="78"
-          height="20"
-          rx="10"
-        />
-
-        <rect
-          x="78"
-          y="7"
-          width="68"
-          height="20"
-          rx="10"
-        />
-
-        <!-- Thumb -->
-        <path
-          d="
-            M54 62
-            C38 55 26 58 19 68
-            C12 78 20 89 35 90
-            L58 88
-            Z
-          "
-        />
-
-        <!-- Wrist -->
-        <rect
-          x="132"
-          y="59"
-          width="45"
-          height="28"
-          rx="13"
-        />
-      </g>
     </svg>
   `);
 }
@@ -447,20 +360,18 @@ async function buildPatFrame(
     );
 
   const hand =
-    await sharp(
-      createHandSvg()
-    )
-      .rotate(
-        frame.handRotation,
-        {
-          background: {
-            r: 0,
-            g: 0,
-            b: 0,
-            alpha: 0
-          }
+    await sharp(PAT_HAND)
+      .resize({
+        width: 170,
+        height: 170,
+        fit: "contain",
+        background: {
+          r: 0,
+          g: 0,
+          b: 0,
+          alpha: 0
         }
-      )
+      })
       .png()
       .toBuffer();
 
@@ -496,7 +407,7 @@ async function buildPatFrame(
       },
       {
         input: hand,
-        left: frame.handX,
+        left: 107,
         top: frame.handY
       }
     ])
@@ -523,89 +434,63 @@ async function generateAvatarPatGif(
 
   const frames = [
     {
-      handX: 96,
-      handY: 34,
-      handRotation: 0,
+      handY: 0,
       avatarWidth: 190,
       avatarHeight: 190,
       avatarY: 176,
       delay: 110
     },
-
     {
-      handX: 96,
-      handY: 48,
-      handRotation: 0,
+      handY: 18,
       avatarWidth: 190,
       avatarHeight: 190,
       avatarY: 176,
       delay: 80
     },
-
     {
-      handX: 96,
-      handY: 64,
-      handRotation: 0,
+      handY: 36,
       avatarWidth: 190,
       avatarHeight: 190,
       avatarY: 176,
       delay: 70
     },
-
     {
-      handX: 96,
-      handY: 78,
-      handRotation: 0,
+      handY: 52,
       avatarWidth: 194,
       avatarHeight: 181,
       avatarY: 185,
       delay: 70
     },
-
     {
-      handX: 96,
-      handY: 88,
-      handRotation: 0,
+      handY: 66,
       avatarWidth: 202,
       avatarHeight: 164,
       avatarY: 202,
       delay: 120
     },
-
     {
-      handX: 96,
-      handY: 80,
-      handRotation: 0,
+      handY: 56,
       avatarWidth: 196,
       avatarHeight: 177,
       avatarY: 189,
       delay: 70
     },
-
     {
-      handX: 96,
-      handY: 66,
-      handRotation: 0,
+      handY: 40,
       avatarWidth: 191,
       avatarHeight: 187,
       avatarY: 179,
       delay: 70
     },
-
     {
-      handX: 96,
-      handY: 50,
-      handRotation: 0,
+      handY: 20,
       avatarWidth: 190,
       avatarHeight: 190,
       avatarY: 176,
       delay: 90
     },
-
     {
-      handX: 96,
-      handY: 34,
-      handRotation: 0,
+      handY: 0,
       avatarWidth: 190,
       avatarHeight: 190,
       avatarY: 176,
@@ -662,20 +547,15 @@ async function generateAvatarPatGif(
       PAT_HEIGHT,
       {
         palette,
-
         delay:
           frames[i].delay,
-
         repeat: 0,
-
         transparent:
           transparentIndex >= 0,
-
         transparentIndex:
           transparentIndex >= 0
             ? transparentIndex
             : 0,
-
         dispose: 2
       }
     );
@@ -784,15 +664,11 @@ function tomatoResult(
       "13-victory-catch.gif"
     ]);
 
-  if (
-    hitAnimations.has(name)
-  ) {
+  if (hitAnimations.has(name)) {
     return "hit";
   }
 
-  if (
-    missAnimations.has(name)
-  ) {
+  if (missAnimations.has(name)) {
     return "miss";
   }
 
@@ -815,31 +691,20 @@ function tomatoPhrase(
   if (!noctis) {
     const hitPhrases = [
       `Direct hit! ${thrower} nailed ${target} with a tomato.`,
-
       `${thrower} threw a tomato and hit ${target} square on.`,
-
       `${target} just took a tomato courtesy of ${thrower}.`,
-
       `${thrower} landed a perfect tomato hit on ${target}.`,
-
       `SPLAT! ${thrower} got ${target} with a tomato.`,
-
       `${thrower}'s tomato found its target: ${target}.`,
-
       `${target} never saw ${thrower}'s tomato coming.`,
-
       `Bullseye! ${thrower} hit ${target} with a tomato.`
     ];
 
     const missPhrases = [
       `${thrower} threw a tomato at ${target}... and completely missed.`,
-
       `${thrower} took a shot at ${target}, but the tomato sailed right past.`,
-
       `${target} dodged ${thrower}'s tomato!`,
-
       `${thrower} launched a tomato at ${target}. Close, but no splat.`,
-
       `WHIFF! ${thrower} missed ${target} with the tomato.`
     ];
 
@@ -847,18 +712,14 @@ function tomatoPhrase(
       name ===
       "tomato-lens-splat.gif"
     ) {
-      return pick(
-        hitPhrases
-      );
+      return pick(hitPhrases);
     }
 
     if (
       name ===
       "tomato-camera-miss.gif"
     ) {
-      return pick(
-        missPhrases
-      );
+      return pick(missPhrases);
     }
 
     return (
@@ -995,9 +856,7 @@ async function isNoctis(
         .toLowerCase()
     );
 
-  return names.includes(
-    "noctis"
-  );
+  return names.includes("noctis");
 }
 
 /*
@@ -1046,9 +905,7 @@ function getFloofAwards(
   guildId
 ) {
   const users =
-    getServerUsers(
-      guildId
-    )
+    getServerUsers(guildId)
       .map(user => ({
         ...user,
 
@@ -1132,9 +989,7 @@ function buildTomatoTallyEmbed(
   guildId
 ) {
   const users =
-    getServerUsers(
-      guildId
-    )
+    getServerUsers(guildId)
       .map(user => ({
         ...user,
 
@@ -1156,9 +1011,7 @@ function buildTomatoTallyEmbed(
           a.tomatoesThrown
       );
 
-  if (
-    users.length === 0
-  ) {
+  if (users.length === 0) {
     return new EmbedBuilder()
       .setTitle(
         "🍅 Tomato Tally"
@@ -1181,24 +1034,16 @@ function buildTomatoTallyEmbed(
       )[0];
 
   const tomatoMagnet =
-    highest(
-      "timesHit"
-    );
+    highest("timesHit");
 
   const sauceSniper =
-    highest(
-      "throwsHit"
-    );
+    highest("throwsHit");
 
   const airballArtist =
-    highest(
-      "throwsMissed"
-    );
+    highest("throwsMissed");
 
   const cantTouchThis =
-    highest(
-      "timesMissed"
-    );
+    highest("timesMissed");
 
   const awards = [];
 
@@ -1227,10 +1072,7 @@ function buildTomatoTallyEmbed(
   }
 
   const topUsers =
-    users.slice(
-      0,
-      15
-    );
+    users.slice(0, 15);
 
   const leaderboard =
     topUsers
@@ -1238,15 +1080,11 @@ function buildTomatoTallyEmbed(
         (user, index) =>
           [
             `**${index + 1}. <@${user.id}>**`,
-
             `🎯 ${user.throwsHit} hit • 🥴 ${user.throwsMissed} missed`,
-
             `💥 Hit ${user.timesHit}x • 💨 Dodged ${user.timesMissed}x`
           ].join("\n")
       )
-      .join(
-        "\n\n"
-      );
+      .join("\n\n");
 
   return new EmbedBuilder()
     .setTitle(
@@ -1262,9 +1100,7 @@ function buildTomatoTallyEmbed(
 
         value:
           awards.length > 0
-            ? awards.join(
-                "\n\n"
-              )
+            ? awards.join("\n\n")
             : "No questionable achievements yet."
       },
 
@@ -1292,9 +1128,7 @@ function buildGoodFloofEmbed(
   guildId
 ) {
   const users =
-    getServerUsers(
-      guildId
-    )
+    getServerUsers(guildId)
       .map(user => ({
         ...user,
 
@@ -1316,9 +1150,7 @@ function buildGoodFloofEmbed(
           a.patActivity
       );
 
-  if (
-    users.length === 0
-  ) {
+  if (users.length === 0) {
     return new EmbedBuilder()
       .setTitle(
         "🐾 Who's a Good Floof?"
@@ -1334,9 +1166,7 @@ function buildGoodFloofEmbed(
     mostActivity,
     pacifist
   } =
-    getFloofAwards(
-      guildId
-    );
+    getFloofAwards(guildId);
 
   const awards = [];
 
@@ -1365,10 +1195,7 @@ function buildGoodFloofEmbed(
   }
 
   const topUsers =
-    users.slice(
-      0,
-      15
-    );
+    users.slice(0, 15);
 
   const leaderboard =
     topUsers
@@ -1376,13 +1203,10 @@ function buildGoodFloofEmbed(
         (user, index) =>
           [
             `**${index + 1}. <@${user.id}>**`,
-
             `🫳 Given: ${user.patsGiven} • 🥰 Received: ${user.patsReceived}`
           ].join("\n")
       )
-      .join(
-        "\n\n"
-      );
+      .join("\n\n");
 
   return new EmbedBuilder()
     .setTitle(
@@ -1398,9 +1222,7 @@ function buildGoodFloofEmbed(
 
         value:
           awards.length > 0
-            ? awards.join(
-                "\n\n"
-              )
+            ? awards.join("\n\n")
             : "No floof honors yet."
       },
 
@@ -1429,9 +1251,7 @@ function buildFloofCheckEmbed(
   target
 ) {
   const users =
-    getServerUsers(
-      guildId
-    );
+    getServerUsers(guildId);
 
   const user =
     users.find(
@@ -1442,13 +1262,10 @@ function buildFloofCheckEmbed(
   const stats =
     user ?? {
       id: target.id,
-
       patsGiven: 0,
       patsReceived: 0,
-
       timesHit: 0,
       timesMissed: 0,
-
       throwsHit: 0,
       throwsMissed: 0
     };
@@ -1458,9 +1275,7 @@ function buildFloofCheckEmbed(
     stats.patsReceived;
 
   const awards =
-    getFloofAwards(
-      guildId
-    );
+    getFloofAwards(guildId);
 
   const heldAwards = [];
 
@@ -1556,27 +1371,20 @@ function buildFloofCheckEmbed(
 
           value: [
             `💥 **Times Hit:** ${stats.timesHit}`,
-
             `🎯 **Hit Target:** ${stats.throwsHit}`,
-
             `💨 **Times Dodged:** ${stats.timesMissed}`,
-
             `🥴 **Missed:** ${stats.throwsMissed}`
           ].join("\n")
         }
       );
 
-  if (
-    heldAwards.length > 0
-  ) {
+  if (heldAwards.length > 0) {
     embed.addFields({
       name:
         "🏆 Floof Honors",
 
       value:
-        heldAwards.join(
-          "\n"
-        )
+        heldAwards.join("\n")
     });
   } else {
     embed.addFields({
@@ -1621,9 +1429,7 @@ client.on(
       return;
     }
 
-    if (
-      !interaction.guildId
-    ) {
+    if (!interaction.guildId) {
       await interaction.reply({
         content:
           "This command only works inside a server.",
@@ -1633,10 +1439,6 @@ client.on(
 
       return;
     }
-
-    /*
-      /tomato
-    */
 
     if (
       interaction.commandName ===
@@ -1686,9 +1488,7 @@ client.on(
             targetIsNoctis
           ),
 
-        files: [
-          gif
-        ]
+        files: [gif]
       });
 
       recordTomatoResult(
@@ -1700,10 +1500,6 @@ client.on(
 
       return;
     }
-
-    /*
-      /pat
-    */
 
     if (
       interaction.commandName ===
@@ -1746,9 +1542,7 @@ client.on(
               true
             ),
 
-          files: [
-            gif
-          ]
+          files: [gif]
         });
 
         recordPat(
@@ -1800,9 +1594,7 @@ client.on(
 
         const fallback =
           genericPats.length > 0
-            ? pick(
-                genericPats
-              )
+            ? pick(genericPats)
             : null;
 
         if (fallback) {
@@ -1831,10 +1623,6 @@ client.on(
       return;
     }
 
-    /*
-      /tomatotally
-    */
-
     if (
       interaction.commandName ===
       "tomatotally"
@@ -1852,10 +1640,6 @@ client.on(
       return;
     }
 
-    /*
-      /whosagoodfloof
-    */
-
     if (
       interaction.commandName ===
       "whosagoodfloof"
@@ -1872,10 +1656,6 @@ client.on(
 
       return;
     }
-
-    /*
-      /checkfloof
-    */
 
     if (
       interaction.commandName ===
