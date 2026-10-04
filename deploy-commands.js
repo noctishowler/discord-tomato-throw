@@ -36,16 +36,35 @@ const commands = [
   new SlashCommandBuilder()
     .setName("whosagoodfloof")
     .setDescription(
-      "Find out who's been giving and receiving all the pats"
-    )
-].map(command => command.toJSON());
+      "See this server's glorious floof statistics"
+    ),
 
-const rest = new REST({
-  version: "10"
-}).setToken(process.env.DISCORD_TOKEN);
+  new SlashCommandBuilder()
+    .setName("checkfloof")
+    .setDescription(
+      "Check someone's personal floof stats"
+    )
+    .addUserOption(option =>
+      option
+        .setName("target")
+        .setDescription("Whose floof stats?")
+        .setRequired(true)
+    )
+].map(command =>
+  command.toJSON()
+);
+
+const rest =
+  new REST({
+    version: "10"
+  }).setToken(
+    process.env.DISCORD_TOKEN
+  );
 
 try {
-  console.log("Registering global Discord commands...");
+  console.log(
+    "Registering global Discord commands..."
+  );
 
   await rest.put(
     Routes.applicationCommands(
@@ -57,7 +76,7 @@ try {
   );
 
   console.log(
-    "Registered /tomato, /pat, /tomatotally, and /whosagoodfloof globally."
+    "Registered /tomato, /pat, /tomatotally, /whosagoodfloof, and /checkfloof globally."
   );
 } catch (error) {
   console.error(error);
