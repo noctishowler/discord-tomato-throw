@@ -7,7 +7,8 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds]
 });
 
-const pick = items => items[Math.floor(Math.random() * items.length)];
+const pick = items =>
+  items[Math.floor(Math.random() * items.length)];
 
 const gifFiles = folder =>
   fs.readdirSync(folder)
@@ -37,15 +38,10 @@ const regularNoctisPats = noctisPats.filter(file =>
 );
 
 /*
-  Persistent tomato tally storage.
+  Persistent storage.
 
   Railway automatically provides RAILWAY_VOLUME_MOUNT_PATH
-  when a persistent volume is attached.
-
-  Fallbacks:
-  1. Railway mounted volume
-  2. DATA_DIR environment variable
-  3. Local ./data folder
+  when the persistent volume is attached.
 */
 
 const DATA_DIR =
@@ -53,19 +49,30 @@ const DATA_DIR =
   process.env.DATA_DIR ||
   "./data";
 
-const SCORE_FILE = path.join(DATA_DIR, "tomato-tally.json");
+const SCORE_FILE = path.join(DATA_DIR, "jester-stats.json");
+const OLD_SCORE_FILE = path.join(DATA_DIR, "tomato-tally.json");
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
 function loadScores() {
   try {
-    if (!fs.existsSync(SCORE_FILE)) {
-      return {};
+    if (fs.existsSync(SCORE_FILE)) {
+      return JSON.parse(
+        fs.readFileSync(SCORE_FILE, "utf8")
+      );
     }
 
-    return JSON.parse(fs.readFileSync(SCORE_FILE, "utf8"));
+    if (fs.existsSync(OLD_SCORE_FILE)) {
+      console.log("Importing old tomato tally data.");
+
+      return JSON.parse(
+        fs.readFileSync(OLD_SCORE_FILE, "utf8")
+      );
+    }
+
+    return {};
   } catch (error) {
-    console.error("Could not load tomato tally:", error);
+    console.error("Could not load Jester stats:", error);
     return {};
   }
 }
@@ -84,7 +91,7 @@ function saveScores() {
 
     fs.renameSync(tempFile, SCORE_FILE);
   } catch (error) {
-    console.error("Could not save tomato tally:", error);
+    console.error("Could not save Jester stats:", error);
   }
 }
 
@@ -99,17 +106,32 @@ function ensureUser(guildId, user) {
       timesHit: 0,
       timesMissed: 0,
       throwsHit: 0,
-      throwsMissed: 0
+      throwsMissed: 0,
+      patsGiven: 0,
+      patsReceived: 0
     };
   }
 
-  scores[guildId][user.id].name =
-    user.globalName || user.username;
+  const stats = scores[guildId][user.id];
 
-  return scores[guildId][user.id];
+  stats.timesHit ??= 0;
+  stats.timesMissed ??= 0;
+  stats.throwsHit ??= 0;
+  stats.throwsMissed ??= 0;
+  stats.patsGiven ??= 0;
+  stats.patsReceived ??= 0;
+
+  stats.name = user.globalName || user.username;
+
+  return stats;
 }
 
-function recordTomatoResult(guildId, thrower, target, result) {
+function recordTomatoResult(
+  guildId,
+  thrower,
+  target,
+  result
+) {
   const throwerStats = ensureUser(guildId, thrower);
   const targetStats = ensureUser(guildId, target);
 
@@ -120,6 +142,16 @@ function recordTomatoResult(guildId, thrower, target, result) {
     throwerStats.throwsMissed += 1;
     targetStats.timesMissed += 1;
   }
+
+  saveScores();
+}
+
+function recordPat(guildId, giver, target) {
+  const giverStats = ensureUser(guildId, giver);
+  const targetStats = ensureUser(guildId, target);
+
+  giverStats.patsGiven += 1;
+  targetStats.patsReceived += 1;
 
   saveScores();
 }
@@ -162,10 +194,6 @@ function tomatoResult(gif, noctis) {
   if (!noctis) {
     if (name === "tomato-lens-splat.gif") {
       return "hit";
-    }
-
-    if (name === "tomato-camera-miss.gif") {
-      return "miss";
     }
 
     return "miss";
@@ -280,7 +308,8 @@ function tomatoPhrase(gif, thrower, target, noctis) {
       `LOOK OUT GIANT TOMATO!!!`
   };
 
-  return phrases[name] ?? `${thrower} threw a tomato at ${target}.`;
+  return phrases[name] ??
+    `${thrower} threw a tomato at ${target}.`;
 }
 
 function patPhrase(gif, giver, target, noctis) {
@@ -295,7 +324,8 @@ function patPhrase(gif, giver, target, noctis) {
         `${giver} reached in and gave ${target} a pat!`
     };
 
-    return phrases[name] ?? `${giver} gave ${target} a pat!`;
+    return phrases[name] ??
+      `${giver} gave ${target} a pat!`;
   }
 
   const phrases = {
@@ -327,7 +357,8 @@ function patPhrase(gif, giver, target, noctis) {
       `DON'T STOP!`
   };
 
-  return phrases[name] ?? `${giver} gave ${target} a pat!`;
+  return phrases[name] ??
+    `${giver} gave ${target} a pat!`;
 }
 
 async function isNoctis(interaction, target) {
@@ -348,45 +379,56 @@ async function isNoctis(interaction, target) {
   return names.includes("noctis");
 }
 
-function buildTomatoTally(guildId) {
+function getServerUsers(guildId) {
   const guildScores = scores[guildId];
 
-  if (!guildScores || Object.keys(guildScores).length === 0) {
-    return "🍅 No tomatoes have been thrown here yet. The produce remains peaceful.";
+  if (!guildScores) {
+    return [];
   }
 
-  const users = Object.entries(guildScores)
-    .map(([id, stats]) => ({
-      id,
-      ...stats,
-      activity:
-        stats.timesHit +
-        stats.timesMissed +
-        stats.throwsHit +
-        stats.throwsMissed
+  return Object.entries(guildScores).map(([id, stats]) => ({
+    id,
+    name: stats.name,
+    timesHit: stats.timesHit ?? 0,
+    timesMissed: stats.timesMissed ?? 0,
+    throwsHit: stats.throwsHit ?? 0,
+    throwsMissed: stats.throwsMissed ?? 0,
+    patsGiven: stats.patsGiven ?? 0,
+    patsReceived: stats.patsReceived ?? 0
+  }));
+}
+
+function buildTomatoTally(guildId) {
+  const users = getServerUsers(guildId)
+    .map(user => ({
+      ...user,
+      tomatoActivity:
+        user.timesHit +
+        user.timesMissed +
+        user.throwsHit +
+        user.throwsMissed
     }))
-    .filter(user => user.activity > 0)
-    .sort((a, b) => b.activity - a.activity);
+    .filter(user => user.tomatoActivity > 0)
+    .sort((a, b) =>
+      b.tomatoActivity - a.tomatoActivity
+    );
 
   if (users.length === 0) {
     return "🍅 No tomatoes have been thrown here yet. The produce remains peaceful.";
   }
 
-  const sections = users.map(user => {
-    return [
-      `🍅 <@${user.id}>`,
-      `💥 Times hit: ${user.timesHit}`,
-      `💨 Times missed: ${user.timesMissed}`,
-      `🎯 Throws hit: ${user.throwsHit}`,
-      `🥴 Throws missed: ${user.throwsMissed}`
-    ].join("\n");
-  });
+  const sections = users.map(user => [
+    `🍅 <@${user.id}>`,
+    `💥 Times hit: ${user.timesHit}`,
+    `💨 Times missed: ${user.timesMissed}`,
+    `🎯 Throws hit: ${user.throwsHit}`,
+    `🥴 Throws missed: ${user.throwsMissed}`
+  ].join("\n"));
 
-  const highest = stat => {
-    return [...users]
+  const highest = stat =>
+    [...users]
       .filter(user => user[stat] > 0)
       .sort((a, b) => b[stat] - a[stat])[0];
-  };
 
   const tomatoMagnet = highest("timesHit");
   const sauceSniper = highest("throwsHit");
@@ -415,7 +457,7 @@ function buildTomatoTally(guildId) {
 
   if (cantTouchThis) {
     awards.push(
-      `🕺🍅 **Can't Touch This:** <@${cantTouchThis.id}> (${cantTouchThis.timesMissed} tomatoes escaped)`
+      `🕺🍅 **Can't Touch This:** <@${cantTouchThis.id}> (${cantTouchThis.timesMissed} escapes)`
     );
   }
 
@@ -432,26 +474,145 @@ function buildTomatoTally(guildId) {
   ].join("\n");
 }
 
+function buildGoodFloof(guildId) {
+  const users = getServerUsers(guildId)
+    .map(user => ({
+      ...user,
+      patActivity:
+        user.patsGiven +
+        user.patsReceived,
+      tomatoesThrown:
+        user.throwsHit +
+        user.throwsMissed
+    }))
+    .filter(user => user.patActivity > 0)
+    .sort((a, b) =>
+      b.patActivity - a.patActivity
+    );
+
+  if (users.length === 0) {
+    return "🐾 Nobody has been patted yet. This is unacceptable.";
+  }
+
+  const sections = users.map(user => [
+    `🐾 <@${user.id}>`,
+    `🫳 Pats given: ${user.patsGiven}`,
+    `🥰 Pats received: ${user.patsReceived}`
+  ].join("\n"));
+
+  const mostGiven = [...users]
+    .filter(user => user.patsGiven > 0)
+    .sort((a, b) =>
+      b.patsGiven - a.patsGiven
+    )[0];
+
+  const mostReceived = [...users]
+    .filter(user => user.patsReceived > 0)
+    .sort((a, b) =>
+      b.patsReceived - a.patsReceived
+    )[0];
+
+  const mostActivity = [...users]
+    .sort((a, b) =>
+      b.patActivity - a.patActivity
+    )[0];
+
+  /*
+    Pacifist:
+    Requires at least 5 pats given.
+
+    Score =
+    pats given - tomatoes thrown
+  */
+
+  const pacifist = [...users]
+    .filter(user => user.patsGiven >= 5)
+    .map(user => ({
+      ...user,
+      pacifistScore:
+        user.patsGiven -
+        user.tomatoesThrown
+    }))
+    .sort((a, b) =>
+      b.pacifistScore - a.pacifistScore
+    )[0];
+
+  const awards = [];
+
+  if (mostGiven) {
+    awards.push(
+      `🐾 **Purpetual Petter** 🐾: <@${mostGiven.id}> (${mostGiven.patsGiven} pats given)`
+    );
+  }
+
+  if (mostReceived) {
+    awards.push(
+      `🫳 **Fluffiest** 🥰: <@${mostReceived.id}> (${mostReceived.patsReceived} pats received)`
+    );
+  }
+
+  if (pacifist) {
+    awards.push(
+      `🇺🇳 **Pacifist** ☮️: <@${pacifist.id}> (${pacifist.patsGiven} pats, ${pacifist.tomatoesThrown} tomatoes thrown)`
+    );
+  }
+
+  if (mostActivity) {
+    awards.push(
+      `✨ **Pat Enthusiast** ✨: <@${mostActivity.id}> (${mostActivity.patActivity} total pat activity)`
+    );
+  }
+
+  return [
+    "🐾✨ **WHO'S A GOOD FLOOF?** ✨🐾",
+    "",
+    sections.join("\n\n"),
+    "",
+    "🏆 **FLOOF HONORS** 🏆",
+    "",
+    awards.join("\n"),
+    "",
+    "🥰 Yes. Yes you are."
+  ].join("\n");
+}
+
 client.once(Events.ClientReady, readyClient => {
-  console.log(`Discord Tomato Throw online as ${readyClient.user.tag}`);
-  console.log(`Tomato tally storage: ${SCORE_FILE}`);
+  console.log(
+    `Discord Tomato Throw online as ${readyClient.user.tag}`
+  );
+
+  console.log(
+    `Jester stats storage: ${SCORE_FILE}`
+  );
 });
 
 client.on(Events.InteractionCreate, async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
+  if (!interaction.guildId) {
+    await interaction.reply({
+      content: "This command only works inside a server.",
+      ephemeral: true
+    });
+
+    return;
+  }
+
   if (interaction.commandName === "tomato") {
-    const target = interaction.options.getUser("target");
+    const target =
+      interaction.options.getUser("target");
 
     if (!target) return;
 
-    const targetIsNoctis = await isNoctis(interaction, target);
+    const targetIsNoctis =
+      await isNoctis(interaction, target);
 
     const gif = targetIsNoctis
       ? pickNoctisTomato()
       : pickGenericTomato();
 
-    const result = tomatoResult(gif, targetIsNoctis);
+    const result =
+      tomatoResult(gif, targetIsNoctis);
 
     recordTomatoResult(
       interaction.guildId,
@@ -474,15 +635,23 @@ client.on(Events.InteractionCreate, async interaction => {
   }
 
   if (interaction.commandName === "pat") {
-    const target = interaction.options.getUser("target");
+    const target =
+      interaction.options.getUser("target");
 
     if (!target) return;
 
-    const targetIsNoctis = await isNoctis(interaction, target);
+    const targetIsNoctis =
+      await isNoctis(interaction, target);
 
     const gif = targetIsNoctis
       ? pickNoctisPat()
       : pick(genericPats);
+
+    recordPat(
+      interaction.guildId,
+      interaction.user,
+      target
+    );
 
     await interaction.reply({
       content: patPhrase(
@@ -499,7 +668,20 @@ client.on(Events.InteractionCreate, async interaction => {
 
   if (interaction.commandName === "tomato-tally") {
     await interaction.reply({
-      content: buildTomatoTally(interaction.guildId)
+      content:
+        buildTomatoTally(interaction.guildId)
+    });
+
+    return;
+  }
+
+  if (
+    interaction.commandName ===
+    "whoseagoodfloof"
+  ) {
+    await interaction.reply({
+      content:
+        buildGoodFloof(interaction.guildId)
     });
   }
 });
