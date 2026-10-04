@@ -19,7 +19,10 @@ const {
 } = gifenc;
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds]
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers
+  ]
 });
 
 const pick = items =>
@@ -27,8 +30,12 @@ const pick = items =>
 
 const gifFiles = folder =>
   fs.readdirSync(folder)
-    .filter(name => name.toLowerCase().endsWith(".gif"))
-    .map(name => path.join(folder, name));
+    .filter(name =>
+      name.toLowerCase().endsWith(".gif")
+    )
+    .map(name =>
+      path.join(folder, name)
+    );
 
 const genericTomatoes =
   gifFiles("./assets/tomato/generic");
@@ -44,22 +51,30 @@ const noctisPats =
 
 const giantTomato =
   noctisTomatoes.find(file =>
-    file.endsWith("15-giant-tomato-rare.gif")
+    file.endsWith(
+      "15-giant-tomato-rare.gif"
+    )
   );
 
 const regularNoctisTomatoes =
   noctisTomatoes.filter(file =>
-    !file.endsWith("15-giant-tomato-rare.gif")
+    !file.endsWith(
+      "15-giant-tomato-rare.gif"
+    )
   );
 
 const dontStopPat =
   noctisPats.find(file =>
-    file.endsWith("09-dont-stop-rare.gif")
+    file.endsWith(
+      "09-dont-stop-rare.gif"
+    )
   );
 
 const regularNoctisPats =
   noctisPats.filter(file =>
-    !file.endsWith("09-dont-stop-rare.gif")
+    !file.endsWith(
+      "09-dont-stop-rare.gif"
+    )
   );
 
 /*
@@ -83,6 +98,12 @@ const OLD_SCORE_FILE =
     "tomato-tally.json"
   );
 
+const JESTER_CONFIG_FILE =
+  path.join(
+    DATA_DIR,
+    "jester-config.json"
+  );
+
 fs.mkdirSync(
   DATA_DIR,
   { recursive: true }
@@ -90,7 +111,9 @@ fs.mkdirSync(
 
 function loadScores() {
   try {
-    if (fs.existsSync(SCORE_FILE)) {
+    if (
+      fs.existsSync(SCORE_FILE)
+    ) {
       return JSON.parse(
         fs.readFileSync(
           SCORE_FILE,
@@ -99,7 +122,11 @@ function loadScores() {
       );
     }
 
-    if (fs.existsSync(OLD_SCORE_FILE)) {
+    if (
+      fs.existsSync(
+        OLD_SCORE_FILE
+      )
+    ) {
       console.log(
         "Importing old tomato tally data."
       );
@@ -123,7 +150,37 @@ function loadScores() {
   }
 }
 
-let scores = loadScores();
+function loadJesterConfig() {
+  try {
+    if (
+      fs.existsSync(
+        JESTER_CONFIG_FILE
+      )
+    ) {
+      return JSON.parse(
+        fs.readFileSync(
+          JESTER_CONFIG_FILE,
+          "utf8"
+        )
+      );
+    }
+
+    return {};
+  } catch (error) {
+    console.error(
+      "Could not load Jester config:",
+      error
+    );
+
+    return {};
+  }
+}
+
+let scores =
+  loadScores();
+
+let jesterConfig =
+  loadJesterConfig();
 
 function saveScores() {
   try {
@@ -152,6 +209,58 @@ function saveScores() {
   }
 }
 
+function saveJesterConfig() {
+  try {
+    const tempFile =
+      `${JESTER_CONFIG_FILE}.tmp`;
+
+    fs.writeFileSync(
+      tempFile,
+      JSON.stringify(
+        jesterConfig,
+        null,
+        2
+      ),
+      "utf8"
+    );
+
+    fs.renameSync(
+      tempFile,
+      JESTER_CONFIG_FILE
+    );
+  } catch (error) {
+    console.error(
+      "Could not save Jester config:",
+      error
+    );
+  }
+}
+
+function getGuildJesterConfig(
+  guildId
+) {
+  if (!jesterConfig[guildId]) {
+    jesterConfig[guildId] = {
+      enabled: false,
+      heavy: false,
+      channelId: null,
+      lastTomatoAt: null,
+      lastPatAt: null
+    };
+  }
+
+  const config =
+    jesterConfig[guildId];
+
+  config.enabled ??= false;
+  config.heavy ??= false;
+  config.channelId ??= null;
+  config.lastTomatoAt ??= null;
+  config.lastPatAt ??= null;
+
+  return config;
+}
+
 function ensureUser(
   guildId,
   user
@@ -160,7 +269,9 @@ function ensureUser(
     scores[guildId] = {};
   }
 
-  if (!scores[guildId][user.id]) {
+  if (
+    !scores[guildId][user.id]
+  ) {
     scores[guildId][user.id] = {
       name:
         user.globalName ||
@@ -277,14 +388,14 @@ function createCircleMask(
 }
 
 async function getAvatarUrl(
-  interaction,
+  guild,
   target
 ) {
   let member = null;
 
   try {
     member =
-      await interaction.guild.members.fetch(
+      await guild.members.fetch(
         target.id
       );
   } catch {}
@@ -301,7 +412,9 @@ async function getAvatarUrl(
   );
 }
 
-async function downloadBuffer(url) {
+async function downloadBuffer(
+  url
+) {
   const response =
     await fetch(url);
 
@@ -322,7 +435,9 @@ async function makePatAvatar(
   height
 ) {
   const resized =
-    await sharp(avatarBuffer)
+    await sharp(
+      avatarBuffer
+    )
       .resize(
         width,
         height,
@@ -333,7 +448,9 @@ async function makePatAvatar(
       .png()
       .toBuffer();
 
-  return sharp(resized)
+  return sharp(
+    resized
+  )
     .composite([
       {
         input:
@@ -360,7 +477,9 @@ async function buildPatFrame(
     );
 
   const hand =
-    await sharp(PAT_HAND)
+    await sharp(
+      PAT_HAND
+    )
       .resize({
         width: 205,
         height: 205,
@@ -386,9 +505,14 @@ async function buildPatFrame(
   const canvas =
     sharp({
       create: {
-        width: PAT_WIDTH,
-        height: PAT_HEIGHT,
+        width:
+          PAT_WIDTH,
+
+        height:
+          PAT_HEIGHT,
+
         channels: 4,
+
         background: {
           r: 0,
           g: 0,
@@ -418,12 +542,12 @@ async function buildPatFrame(
 }
 
 async function generateAvatarPatGif(
-  interaction,
+  guild,
   target
 ) {
   const avatarUrl =
     await getAvatarUrl(
-      interaction,
+      guild,
       target
     );
 
@@ -522,8 +646,11 @@ async function generateAvatarPatGif(
         rgba,
         128,
         {
-          format: "rgba4444",
-          oneBitAlpha: true
+          format:
+            "rgba4444",
+
+          oneBitAlpha:
+            true
         }
       );
 
@@ -547,15 +674,20 @@ async function generateAvatarPatGif(
       PAT_HEIGHT,
       {
         palette,
+
         delay:
           frames[i].delay,
+
         repeat: 0,
+
         transparent:
           transparentIndex >= 0,
+
         transparentIndex:
           transparentIndex >= 0
             ? transparentIndex
             : 0,
+
         dispose: 2
       }
     );
@@ -598,7 +730,9 @@ function pickGenericTomato() {
   return (
     hit ??
     miss ??
-    pick(genericTomatoes)
+    pick(
+      genericTomatoes
+    )
   );
 }
 
@@ -664,11 +798,15 @@ function tomatoResult(
       "13-victory-catch.gif"
     ]);
 
-  if (hitAnimations.has(name)) {
+  if (
+    hitAnimations.has(name)
+  ) {
     return "hit";
   }
 
-  if (missAnimations.has(name)) {
+  if (
+    missAnimations.has(name)
+  ) {
     return "miss";
   }
 
@@ -712,14 +850,18 @@ function tomatoPhrase(
       name ===
       "tomato-lens-splat.gif"
     ) {
-      return pick(hitPhrases);
+      return pick(
+        hitPhrases
+      );
     }
 
     if (
       name ===
       "tomato-camera-miss.gif"
     ) {
-      return pick(missPhrases);
+      return pick(
+        missPhrases
+      );
     }
 
     return (
@@ -832,14 +974,14 @@ function patPhrase(
 }
 
 async function isNoctis(
-  interaction,
+  guild,
   target
 ) {
   let member = null;
 
   try {
     member =
-      await interaction.guild.members.fetch(
+      await guild.members.fetch(
         target.id
       );
   } catch {}
@@ -856,7 +998,323 @@ async function isNoctis(
         .toLowerCase()
     );
 
-  return names.includes("noctis");
+  return names.includes(
+    "noctis"
+  );
+}
+
+/*
+  Random Jester targets
+*/
+
+async function getRandomHuman(
+  guild
+) {
+  const members =
+    await guild.members.fetch();
+
+  const humans =
+    members.filter(
+      member =>
+        !member.user.bot
+    );
+
+  if (
+    humans.size === 0
+  ) {
+    return null;
+  }
+
+  return pick(
+    [...humans.values()]
+  );
+}
+
+/*
+  Automatic Jester
+*/
+
+const NORMAL_INTERVAL =
+  24 * 60 * 60 * 1000;
+
+const HEAVY_INTERVAL =
+  6 * 60 * 60 * 1000;
+
+async function runAutomaticTomato(
+  guild,
+  channel
+) {
+  const member =
+    await getRandomHuman(
+      guild
+    );
+
+  if (!member) {
+    return;
+  }
+
+  const target =
+    member.user;
+
+  const targetIsNoctis =
+    await isNoctis(
+      guild,
+      target
+    );
+
+  const gif =
+    targetIsNoctis
+      ? pickNoctisTomato()
+      : pickGenericTomato();
+
+  if (!gif) {
+    return;
+  }
+
+  const result =
+    tomatoResult(
+      gif,
+      targetIsNoctis
+    );
+
+  await channel.send({
+    content:
+      tomatoPhrase(
+        gif,
+        client.user,
+        target,
+        targetIsNoctis
+      ),
+
+    files: [
+      gif
+    ]
+  });
+
+  recordTomatoResult(
+    guild.id,
+    client.user,
+    target,
+    result
+  );
+}
+
+async function runAutomaticPat(
+  guild,
+  channel
+) {
+  const member =
+    await getRandomHuman(
+      guild
+    );
+
+  if (!member) {
+    return;
+  }
+
+  const target =
+    member.user;
+
+  const targetIsNoctis =
+    await isNoctis(
+      guild,
+      target
+    );
+
+  if (targetIsNoctis) {
+    const gif =
+      pickNoctisPat();
+
+    if (!gif) {
+      return;
+    }
+
+    await channel.send({
+      content:
+        patPhrase(
+          gif,
+          client.user,
+          target,
+          true
+        ),
+
+      files: [
+        gif
+      ]
+    });
+
+    recordPat(
+      guild.id,
+      client.user,
+      target
+    );
+
+    return;
+  }
+
+  try {
+    const patGif =
+      await generateAvatarPatGif(
+        guild,
+        target
+      );
+
+    const attachment =
+      new AttachmentBuilder(
+        patGif,
+        {
+          name:
+            "avatar-pat.gif"
+        }
+      );
+
+    await channel.send({
+      content:
+        `${client.user} gave ${target} a pat!`,
+
+      files: [
+        attachment
+      ]
+    });
+
+    recordPat(
+      guild.id,
+      client.user,
+      target
+    );
+  } catch (error) {
+    console.error(
+      "Automatic pat generation failed:",
+      error
+    );
+
+    const fallback =
+      genericPats.length > 0
+        ? pick(
+            genericPats
+          )
+        : null;
+
+    if (!fallback) {
+      return;
+    }
+
+    await channel.send({
+      content:
+        `${client.user} gave ${target} a pat!`,
+
+      files: [
+        fallback
+      ]
+    });
+
+    recordPat(
+      guild.id,
+      client.user,
+      target
+    );
+  }
+}
+
+async function checkAutomaticJester() {
+  const now =
+    Date.now();
+
+  for (
+    const [
+      guildId,
+      config
+    ] of Object.entries(
+      jesterConfig
+    )
+  ) {
+    if (
+      !config.enabled ||
+      !config.channelId
+    ) {
+      continue;
+    }
+
+    const guild =
+      client.guilds.cache.get(
+        guildId
+      );
+
+    if (!guild) {
+      continue;
+    }
+
+    let channel = null;
+
+    try {
+      channel =
+        await guild.channels.fetch(
+          config.channelId
+        );
+    } catch {}
+
+    if (
+      !channel ||
+      !channel.isTextBased()
+    ) {
+      continue;
+    }
+
+    const interval =
+      config.heavy
+        ? HEAVY_INTERVAL
+        : NORMAL_INTERVAL;
+
+    const lastTomato =
+      config.lastTomatoAt ?? now;
+
+    const lastPat =
+      config.lastPatAt ?? now;
+
+    if (
+      now - lastTomato >=
+      interval
+    ) {
+      try {
+        await runAutomaticTomato(
+          guild,
+          channel
+        );
+
+        config.lastTomatoAt =
+          Date.now();
+
+        saveJesterConfig();
+      } catch (error) {
+        console.error(
+          `Automatic tomato failed in guild ${guildId}:`,
+          error
+        );
+      }
+    }
+
+    if (
+      now - lastPat >=
+      interval
+    ) {
+      try {
+        await runAutomaticPat(
+          guild,
+          channel
+        );
+
+        config.lastPatAt =
+          Date.now();
+
+        saveJesterConfig();
+      } catch (error) {
+        console.error(
+          `Automatic pat failed in guild ${guildId}:`,
+          error
+        );
+      }
+    }
+  }
 }
 
 /*
@@ -905,7 +1363,9 @@ function getFloofAwards(
   guildId
 ) {
   const users =
-    getServerUsers(guildId)
+    getServerUsers(
+      guildId
+    )
       .map(user => ({
         ...user,
 
@@ -989,7 +1449,9 @@ function buildTomatoTallyEmbed(
   guildId
 ) {
   const users =
-    getServerUsers(guildId)
+    getServerUsers(
+      guildId
+    )
       .map(user => ({
         ...user,
 
@@ -1011,7 +1473,9 @@ function buildTomatoTallyEmbed(
           a.tomatoesThrown
       );
 
-  if (users.length === 0) {
+  if (
+    users.length === 0
+  ) {
     return new EmbedBuilder()
       .setTitle(
         "🍅 Tomato Tally"
@@ -1034,16 +1498,24 @@ function buildTomatoTallyEmbed(
       )[0];
 
   const tomatoMagnet =
-    highest("timesHit");
+    highest(
+      "timesHit"
+    );
 
   const sauceSniper =
-    highest("throwsHit");
+    highest(
+      "throwsHit"
+    );
 
   const airballArtist =
-    highest("throwsMissed");
+    highest(
+      "throwsMissed"
+    );
 
   const cantTouchThis =
-    highest("timesMissed");
+    highest(
+      "timesMissed"
+    );
 
   const awards = [];
 
@@ -1072,19 +1544,31 @@ function buildTomatoTallyEmbed(
   }
 
   const topUsers =
-    users.slice(0, 15);
+    users.slice(
+      0,
+      15
+    );
 
   const leaderboard =
     topUsers
       .map(
-        (user, index) =>
+        (
+          user,
+          index
+        ) =>
           [
             `**${index + 1}. <@${user.id}>**`,
+
             `🎯 ${user.throwsHit} hit • 🥴 ${user.throwsMissed} missed`,
+
             `💥 Hit ${user.timesHit}x • 💨 Dodged ${user.timesMissed}x`
-          ].join("\n")
+          ].join(
+            "\n"
+          )
       )
-      .join("\n\n");
+      .join(
+        "\n\n"
+      );
 
   return new EmbedBuilder()
     .setTitle(
@@ -1100,7 +1584,9 @@ function buildTomatoTallyEmbed(
 
         value:
           awards.length > 0
-            ? awards.join("\n\n")
+            ? awards.join(
+                "\n\n"
+              )
             : "No questionable achievements yet."
       },
 
@@ -1128,7 +1614,9 @@ function buildGoodFloofEmbed(
   guildId
 ) {
   const users =
-    getServerUsers(guildId)
+    getServerUsers(
+      guildId
+    )
       .map(user => ({
         ...user,
 
@@ -1150,7 +1638,9 @@ function buildGoodFloofEmbed(
           a.patActivity
       );
 
-  if (users.length === 0) {
+  if (
+    users.length === 0
+  ) {
     return new EmbedBuilder()
       .setTitle(
         "🐾 Who's a Good Floof?"
@@ -1166,7 +1656,9 @@ function buildGoodFloofEmbed(
     mostActivity,
     pacifist
   } =
-    getFloofAwards(guildId);
+    getFloofAwards(
+      guildId
+    );
 
   const awards = [];
 
@@ -1195,18 +1687,28 @@ function buildGoodFloofEmbed(
   }
 
   const topUsers =
-    users.slice(0, 15);
+    users.slice(
+      0,
+      15
+    );
 
   const leaderboard =
     topUsers
       .map(
-        (user, index) =>
+        (
+          user,
+          index
+        ) =>
           [
             `**${index + 1}. <@${user.id}>**`,
             `🫳 Given: ${user.patsGiven} • 🥰 Received: ${user.patsReceived}`
-          ].join("\n")
+          ].join(
+            "\n"
+          )
       )
-      .join("\n\n");
+      .join(
+        "\n\n"
+      );
 
   return new EmbedBuilder()
     .setTitle(
@@ -1222,7 +1724,9 @@ function buildGoodFloofEmbed(
 
         value:
           awards.length > 0
-            ? awards.join("\n\n")
+            ? awards.join(
+                "\n\n"
+              )
             : "No floof honors yet."
       },
 
@@ -1251,17 +1755,22 @@ function buildFloofCheckEmbed(
   target
 ) {
   const users =
-    getServerUsers(guildId);
+    getServerUsers(
+      guildId
+    );
 
   const user =
     users.find(
       user =>
-        user.id === target.id
+        user.id ===
+        target.id
     );
 
   const stats =
     user ?? {
-      id: target.id,
+      id:
+        target.id,
+
       patsGiven: 0,
       patsReceived: 0,
       timesHit: 0,
@@ -1275,9 +1784,12 @@ function buildFloofCheckEmbed(
     stats.patsReceived;
 
   const awards =
-    getFloofAwards(guildId);
+    getFloofAwards(
+      guildId
+    );
 
-  const heldAwards = [];
+  const heldAwards =
+    [];
 
   if (
     awards.mostGiven?.id ===
@@ -1374,17 +1886,23 @@ function buildFloofCheckEmbed(
             `🎯 **Hit Target:** ${stats.throwsHit}`,
             `💨 **Times Dodged:** ${stats.timesMissed}`,
             `🥴 **Missed:** ${stats.throwsMissed}`
-          ].join("\n")
+          ].join(
+            "\n"
+          )
         }
       );
 
-  if (heldAwards.length > 0) {
+  if (
+    heldAwards.length > 0
+  ) {
     embed.addFields({
       name:
         "🏆 Floof Honors",
 
       value:
-        heldAwards.join("\n")
+        heldAwards.join(
+          "\n"
+        )
     });
   } else {
     embed.addFields({
@@ -1413,6 +1931,23 @@ client.once(
     console.log(
       `Jester stats storage: ${SCORE_FILE}`
     );
+
+    console.log(
+      `Jester config storage: ${JESTER_CONFIG_FILE}`
+    );
+
+    setInterval(
+      checkAutomaticJester,
+      60 * 1000
+    );
+
+    checkAutomaticJester()
+      .catch(error =>
+        console.error(
+          "Initial Jester scheduler check failed:",
+          error
+        )
+      );
   }
 );
 
@@ -1429,7 +1964,9 @@ client.on(
       return;
     }
 
-    if (!interaction.guildId) {
+    if (
+      !interaction.guildId
+    ) {
       await interaction.reply({
         content:
           "This command only works inside a server.",
@@ -1439,6 +1976,124 @@ client.on(
 
       return;
     }
+
+    /*
+      /togglejester
+    */
+
+    if (
+      interaction.commandName ===
+      "togglejester"
+    ) {
+      const config =
+        getGuildJesterConfig(
+          interaction.guildId
+        );
+
+      if (config.enabled) {
+        config.enabled =
+          false;
+
+        config.heavy =
+          false;
+
+        saveJesterConfig();
+
+        await interaction.reply({
+          content:
+            "Jester has been turned off.",
+
+          ephemeral: true
+        });
+
+        return;
+      }
+
+      const now =
+        Date.now();
+
+      config.enabled =
+        true;
+
+      config.heavy =
+        false;
+
+      config.channelId =
+        interaction.channelId;
+
+      config.lastTomatoAt =
+        now;
+
+      config.lastPatAt =
+        now;
+
+      saveJesterConfig();
+
+      await interaction.reply({
+        content:
+          "Jester has been turned on.",
+
+        ephemeral: true
+      });
+
+      return;
+    }
+
+    /*
+      /heavyjester
+    */
+
+    if (
+      interaction.commandName ===
+      "heavyjester"
+    ) {
+      const config =
+        getGuildJesterConfig(
+          interaction.guildId
+        );
+
+      if (
+        !config.enabled
+      ) {
+        await interaction.reply({
+          content:
+            "Jester must be turned on first.",
+
+          ephemeral: true
+        });
+
+        return;
+      }
+
+      config.heavy =
+        !config.heavy;
+
+      const now =
+        Date.now();
+
+      config.lastTomatoAt =
+        now;
+
+      config.lastPatAt =
+        now;
+
+      saveJesterConfig();
+
+      await interaction.reply({
+        content:
+          config.heavy
+            ? "Heavy Jester has been turned on."
+            : "Heavy Jester has been turned off.",
+
+        ephemeral: true
+      });
+
+      return;
+    }
+
+    /*
+      /tomato
+    */
 
     if (
       interaction.commandName ===
@@ -1455,7 +2110,7 @@ client.on(
 
       const targetIsNoctis =
         await isNoctis(
-          interaction,
+          interaction.guild,
           target
         );
 
@@ -1488,7 +2143,9 @@ client.on(
             targetIsNoctis
           ),
 
-        files: [gif]
+        files: [
+          gif
+        ]
       });
 
       recordTomatoResult(
@@ -1500,6 +2157,10 @@ client.on(
 
       return;
     }
+
+    /*
+      /pat
+    */
 
     if (
       interaction.commandName ===
@@ -1516,11 +2177,13 @@ client.on(
 
       const targetIsNoctis =
         await isNoctis(
-          interaction,
+          interaction.guild,
           target
         );
 
-      if (targetIsNoctis) {
+      if (
+        targetIsNoctis
+      ) {
         const gif =
           pickNoctisPat();
 
@@ -1542,7 +2205,9 @@ client.on(
               true
             ),
 
-          files: [gif]
+          files: [
+            gif
+          ]
         });
 
         recordPat(
@@ -1559,7 +2224,7 @@ client.on(
       try {
         const patGif =
           await generateAvatarPatGif(
-            interaction,
+            interaction.guild,
             target
           );
 
@@ -1594,10 +2259,14 @@ client.on(
 
         const fallback =
           genericPats.length > 0
-            ? pick(genericPats)
+            ? pick(
+                genericPats
+              )
             : null;
 
-        if (fallback) {
+        if (
+          fallback
+        ) {
           await interaction.editReply({
             content:
               `${interaction.user} gave ${target} a pat!`,
@@ -1623,6 +2292,10 @@ client.on(
       return;
     }
 
+    /*
+      /tomatotally
+    */
+
     if (
       interaction.commandName ===
       "tomatotally"
@@ -1640,6 +2313,10 @@ client.on(
       return;
     }
 
+    /*
+      /whosagoodfloof
+    */
+
     if (
       interaction.commandName ===
       "whosagoodfloof"
@@ -1656,6 +2333,10 @@ client.on(
 
       return;
     }
+
+    /*
+      /checkfloof
+    */
 
     if (
       interaction.commandName ===
