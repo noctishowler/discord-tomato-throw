@@ -9,13 +9,14 @@ import {
 import fs from "fs";
 import path from "path";
 import sharp from "sharp";
-import {
+import gifenc from "gifenc";
+import "dotenv/config";
+
+const {
   GIFEncoder,
   quantize,
   applyPalette
-} from "gifenc";
-
-import "dotenv/config";
+} = gifenc;
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds]
@@ -70,7 +71,7 @@ const regularNoctisPats =
   );
 
 /*
-  Persistent storage.
+  Persistent storage
 */
 
 const DATA_DIR =
@@ -262,7 +263,7 @@ function recordPat(
 }
 
 /*
-  Generic avatar pat animation.
+  Dynamic avatar pat
 */
 
 const PAT_WIDTH = 384;
@@ -463,9 +464,10 @@ async function buildPatFrame(
 
   const avatarX =
     Math.round(
-      (PAT_WIDTH -
-        frame.avatarWidth) /
-        2
+      (
+        PAT_WIDTH -
+        frame.avatarWidth
+      ) / 2
     );
 
   const canvas =
@@ -517,23 +519,10 @@ async function generateAvatarPatGif(
       avatarUrl
     );
 
-  /*
-    Hand comes down,
-    makes contact,
-    squishes the avatar,
-    then lifts back up.
-
-    Avatar starts:
-      190 x 190
-
-    Maximum squish:
-      202 x 164
-  */
-
   const frames = [
     {
       handX: 112,
-      handY: -36,
+      handY: 0,
       handRotation: -7,
       avatarWidth: 190,
       avatarHeight: 190,
@@ -543,7 +532,7 @@ async function generateAvatarPatGif(
 
     {
       handX: 112,
-      handY: -8,
+      handY: 8,
       handRotation: -6,
       avatarWidth: 190,
       avatarHeight: 190,
@@ -603,7 +592,7 @@ async function generateAvatarPatGif(
 
     {
       handX: 112,
-      handY: 0,
+      handY: 8,
       handRotation: -6,
       avatarWidth: 190,
       avatarHeight: 190,
@@ -613,7 +602,7 @@ async function generateAvatarPatGif(
 
     {
       handX: 112,
-      handY: -36,
+      handY: 0,
       handRotation: -7,
       avatarWidth: 190,
       avatarHeight: 190,
@@ -671,6 +660,7 @@ async function generateAvatarPatGif(
       PAT_HEIGHT,
       {
         palette,
+
         delay:
           frames[i].delay,
 
@@ -697,7 +687,7 @@ async function generateAvatarPatGif(
 }
 
 /*
-  Tomato selection.
+  Tomato selection
 */
 
 function pickGenericTomato() {
@@ -808,7 +798,7 @@ function tomatoResult(
 }
 
 /*
-  Tomato response text.
+  Tomato text
 */
 
 function tomatoPhrase(
@@ -823,20 +813,31 @@ function tomatoPhrase(
   if (!noctis) {
     const hitPhrases = [
       `Direct hit! ${thrower} nailed ${target} with a tomato.`,
+
       `${thrower} threw a tomato and hit ${target} square on.`,
+
       `${target} just took a tomato courtesy of ${thrower}.`,
+
       `${thrower} landed a perfect tomato hit on ${target}.`,
+
       `SPLAT! ${thrower} got ${target} with a tomato.`,
+
       `${thrower}'s tomato found its target: ${target}.`,
+
       `${target} never saw ${thrower}'s tomato coming.`,
+
       `Bullseye! ${thrower} hit ${target} with a tomato.`
     ];
 
     const missPhrases = [
       `${thrower} threw a tomato at ${target}... and completely missed.`,
+
       `${thrower} took a shot at ${target}, but the tomato sailed right past.`,
+
       `${target} dodged ${thrower}'s tomato!`,
+
       `${thrower} launched a tomato at ${target}. Close, but no splat.`,
+
       `WHIFF! ${thrower} missed ${target} with the tomato.`
     ];
 
@@ -914,7 +915,7 @@ function tomatoPhrase(
 }
 
 /*
-  Pat response text.
+  Pat text
 */
 
 function patPhrase(
@@ -998,7 +999,7 @@ async function isNoctis(
 }
 
 /*
-  Score helpers.
+  Stats
 */
 
 function getServerUsers(
@@ -1122,7 +1123,7 @@ function getFloofAwards(
 }
 
 /*
-  Tomato tally embed.
+  Tomato tally
 */
 
 function buildTomatoTallyEmbed(
@@ -1282,7 +1283,7 @@ function buildTomatoTallyEmbed(
 }
 
 /*
-  Floof leaderboard embed.
+  Floof leaderboard
 */
 
 function buildGoodFloofEmbed(
@@ -1418,7 +1419,7 @@ function buildGoodFloofEmbed(
 }
 
 /*
-  Individual floof check.
+  Individual floof check
 */
 
 function buildFloofCheckEmbed(
@@ -1589,7 +1590,7 @@ function buildFloofCheckEmbed(
 }
 
 /*
-  Bot ready.
+  Ready
 */
 
 client.once(
@@ -1606,7 +1607,7 @@ client.once(
 );
 
 /*
-  Commands.
+  Commands
 */
 
 client.on(
@@ -1722,13 +1723,21 @@ client.on(
         );
 
       /*
-        Noctis keeps the custom
-        easter egg animations.
+        Noctis keeps custom animations
       */
 
       if (targetIsNoctis) {
         const gif =
           pickNoctisPat();
+
+        if (!gif) {
+          await interaction.reply({
+            content:
+              "Jester can't find a Noctis pat GIF right now."
+          });
+
+          return;
+        }
 
         await interaction.reply({
           content:
@@ -1755,7 +1764,7 @@ client.on(
 
       /*
         Everyone else gets
-        the dynamic avatar pat.
+        the avatar pat
       */
 
       await interaction.deferReply();
@@ -1796,11 +1805,6 @@ client.on(
           error
         );
 
-        /*
-          Fall back to the old generic
-          pat GIF if something goes wrong.
-        */
-
         const fallback =
           genericPats.length > 0
             ? pick(
@@ -1836,7 +1840,7 @@ client.on(
 
     /*
       /tomatotally
-      Private to requester.
+      requester only
     */
 
     if (
@@ -1858,7 +1862,7 @@ client.on(
 
     /*
       /whosagoodfloof
-      Private to requester.
+      requester only
     */
 
     if (
@@ -1880,7 +1884,7 @@ client.on(
 
     /*
       /checkfloof
-      Private to requester.
+      requester only
     */
 
     if (
