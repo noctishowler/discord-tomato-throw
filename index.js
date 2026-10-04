@@ -544,7 +544,7 @@ function buildTomatoTallyEmbed(guildId) {
       return [
         `**${index + 1}. <@${user.id}>**`,
         `🎯 ${user.throwsHit} hit  •  🥴 ${user.throwsMissed} missed`,
-        `💥 Hit ${user.timesHit}x  •  💨 Escaped ${user.timesMissed}x`
+        `💥 Hit ${user.timesHit}x  •  💨 Dodged ${user.timesMissed}x`
       ].join("\n");
     })
     .join("\n\n");
@@ -698,6 +698,8 @@ function buildFloofCheckEmbed(
     id: target.id,
     patsGiven: 0,
     patsReceived: 0,
+    timesHit: 0,
+    timesMissed: 0,
     throwsHit: 0,
     throwsMissed: 0
   };
@@ -705,10 +707,6 @@ function buildFloofCheckEmbed(
   const patActivity =
     stats.patsGiven +
     stats.patsReceived;
-
-  const tomatoesThrown =
-    stats.throwsHit +
-    stats.throwsMissed;
 
   const awards =
     getFloofAwards(guildId);
@@ -778,10 +776,13 @@ function buildFloofCheckEmbed(
         inline: true
       },
       {
-        name: "🍅 Tomatoes Thrown",
-        value:
-          String(tomatoesThrown),
-        inline: true
+        name: "🍅 Tomato Record",
+        value: [
+          `💥 **Times Hit:** ${stats.timesHit}`,
+          `🎯 **Hit Target:** ${stats.throwsHit}`,
+          `💨 **Times Dodged:** ${stats.timesMissed}`,
+          `🥴 **Missed:** ${stats.throwsMissed}`
+        ].join("\n")
       }
     );
 
@@ -932,7 +933,8 @@ client.on(
           buildTomatoTallyEmbed(
             interaction.guildId
           )
-        ]
+        ],
+        ephemeral: true
       });
 
       return;
@@ -947,7 +949,8 @@ client.on(
           buildGoodFloofEmbed(
             interaction.guildId
           )
-        ]
+        ],
+        ephemeral: true
       });
 
       return;
@@ -970,7 +973,8 @@ client.on(
             interaction.guildId,
             target
           )
-        ]
+        ],
+        ephemeral: true
       });
 
       return;
