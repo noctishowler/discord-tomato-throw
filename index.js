@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits } from "discord.js";
+import { Client, GatewayIntentBits, Events } from "discord.js";
 import fs from "fs";
 import path from "path";
 import "dotenv/config";
@@ -37,60 +37,129 @@ const regularNoctisPats = noctisPats.filter(file =>
 );
 
 function pickNoctisTomato() {
-  if (giantTomato && Math.random() < 0.01) return giantTomato;
+  if (giantTomato && Math.random() < 0.01) {
+    return giantTomato;
+  }
+
   return pick(regularNoctisTomatoes);
 }
 
 function pickNoctisPat() {
-  if (dontStopPat && Math.random() < 0.01) return dontStopPat;
+  if (dontStopPat && Math.random() < 0.01) {
+    return dontStopPat;
+  }
+
   return pick(regularNoctisPats);
 }
 
-const tomatoPhrases = [
-  (thrower, target) => `${thrower} threw a tomato at ${target}! 🍅`,
-  (thrower, target) => `${thrower} launched a tomato at ${target}! 🍅`,
-  (thrower, target) => `${thrower} absolutely tomatoed ${target}! 🍅`,
-  (thrower, target) => `${target} has been tomato'd by ${thrower}! 🍅`,
-  (thrower, target) => `${thrower} sent a tomato flying at ${target}! 🍅`,
-  (thrower, target) => `${target} never saw that tomato coming. 🍅`,
-  (thrower, target) => `${thrower} has chosen produce-based violence against ${target}. 🍅`,
-  (thrower, target) => `Direct hit! ${thrower} nailed ${target} with a tomato. 🍅`
-];
+function tomatoPhrase(gif, thrower, target, noctis) {
+  const name = path.basename(gif);
 
-const noctisTomatoPhrases = [
-  (thrower, target) => `${thrower} threw a tomato at ${target}! Poor Noctis! 🍅🐺`,
-  (thrower, target) => `${thrower} tomatoed ${target}. Rude! 🍅🐺`,
-  (thrower, target) => `${target} has been hit by a tomato courtesy of ${thrower}! 🍅`,
-  (thrower, target) => `${thrower} chose violence. ${target} chose being adorable anyway. 🍅🐺`,
-  (thrower, target) => `${thrower} launched a tomato at ${target}! Awww, not Noctis! 🍅🐺`,
-  (thrower, target) => `Incoming! ${target} has been tomatoed by ${thrower}! 🍅`,
-  (thrower, target) => `Not the wolf! ${thrower} nailed ${target} with a tomato. 🍅🐺`,
-  (thrower, target) => `${target} just took a tomato to the face courtesy of ${thrower}. 🍅`,
-  (thrower, target) => `Someone protect ${target} from ${thrower} and their produce! 🍅🐺`,
-  (thrower, target) => `${thrower} has committed crimes against ${target} and tomatoes everywhere. 🍅`
-];
+  if (!noctis) {
+    const phrases = {
+      "tomato-lens-splat.gif":
+        `Direct hit! ${thrower} nailed ${target} with a tomato.`,
 
-const patPhrases = [
-  (giver, target) => `${giver} gave ${target} a pat! 🐾`,
-  (giver, target) => `${giver} gave ${target} some well-earned pats! 🐾`,
-  (giver, target) => `${giver} gently patted ${target}. 🐾`,
-  (giver, target) => `${target} received some premium head pats from ${giver}! 🐾`,
-  (giver, target) => `${giver} delivered emergency pats to ${target}. 🐾`,
-  (giver, target) => `${target} has been officially patted by ${giver}. 🐾`,
-  (giver, target) => `${giver} gave ${target} the good pats! 🐾`,
-  (giver, target) => `Pat received. ${target} appears pleased. 🐾`
-];
+      "tomato-camera-miss.gif":
+        `${thrower} threw a tomato at ${target}... and completely missed.`
+    };
 
-const noctisPatPhrases = [
-  (giver, target) => `${giver} petted ${target}, awww! 🐾💜`,
-  (giver, target) => `${giver} gave ${target} the good pats! 🐾💜`,
-  (giver, target) => `${target} got head pats from ${giver}! Awww! 🐺💜`,
-  (giver, target) => `${giver} found ${target}'s pat button. 🐾🐺`,
-  (giver, target) => `${target} has been successfully patted by ${giver}. 💜`,
-  (giver, target) => `${giver} gave ${target} some much-needed affection. Awww! 🐾`,
-  (giver, target) => `The wolf has been patted. ${giver} is responsible. 🐺💜`,
-  (giver, target) => `${giver} deployed emergency head pats to ${target}. 🐾`
-];
+    return phrases[name] ?? `${thrower} threw a tomato at ${target}.`;
+  }
+
+  const phrases = {
+    "01-direct-hit.gif":
+      `Direct hit! ${thrower} nailed ${target} square in the face.`,
+
+    "02-dodge.gif":
+      `${thrower} threw a tomato at ${target}, but Noctis dodged it!`,
+
+    "03-bad-dodge.gif":
+      `${target} tried to dodge ${thrower}'s tomato. Tried.`,
+
+    "04-catch-and-eat.gif":
+      `${target} caught ${thrower}'s tomato... and ate it.`,
+
+    "05-return-fire.gif":
+      `${thrower} threw a tomato at ${target}. Noctis returned fire!`,
+
+    "07-barrage.gif":
+      `${thrower} started a tomato barrage against ${target}!`,
+
+    "08-cherry-tomato.gif":
+      `${thrower} hit ${target} with a tiny cherry tomato.`,
+
+    "09-incoming.gif":
+      `INCOMING! ${thrower} sent a tomato flying at ${target}!`,
+
+    "10-wrong-direction.gif":
+      `${thrower} threw a tomato at ${target}... in completely the wrong direction.`,
+
+    "11-angry.gif":
+      `${thrower} tomatoed ${target}. Noctis is NOT amused.`,
+
+    "12-awoo-interrupted.gif":
+      `Awo-*splat*`,
+
+    "13-victory-catch.gif":
+      `${target} caught ${thrower}'s tomato like a champion!`,
+
+    "14-shake-it-off.gif":
+      `${target} got tomatoed by ${thrower}, then shook it off.`,
+
+    "15-giant-tomato-rare.gif":
+      `LOOK OUT GIANT TOMATO!!!`
+  };
+
+  return phrases[name] ?? `${thrower} threw a tomato at ${target}.`;
+}
+
+function patPhrase(gif, giver, target, noctis) {
+  const name = path.basename(gif);
+
+  if (!noctis) {
+    const phrases = {
+      "furry-pat.gif":
+        `${giver} gave ${target} a pat!`,
+
+      "furry-viewer-pat.gif":
+        `${giver} reached in and gave ${target} a pat!`
+    };
+
+    return phrases[name] ?? `${giver} gave ${target} a pat!`;
+  }
+
+  const phrases = {
+    "01-happy-pat.gif":
+      `${giver} gave ${target} a pat. Happy wolf!`,
+
+    "02-head-pat.gif":
+      `${giver} gave ${target} some proper head pats!`,
+
+    "03-rapid-pat.gif":
+      `${giver} deployed rapid pats on ${target}!`,
+
+    "04-shy-pat.gif":
+      `${giver} gave ${target} a pat... now Noctis is all shy.`,
+
+    "05-more-pats.gif":
+      `${target} would like ${giver} to continue the pats, please.`,
+
+    "06-the-spot.gif":
+      `${giver} found THE SPOT on ${target}.`,
+
+    "07-surprise-pat.gif":
+      `${giver} surprised ${target} with a pat!`,
+
+    "08-too-many-pats.gif":
+      `${giver} may have given ${target} a few too many pats.`,
+
+    "09-dont-stop-rare.gif":
+      `DON'T STOP!`
+  };
+
+  return phrases[name] ?? `${giver} gave ${target} a pat!`;
+}
 
 async function isNoctis(interaction, target) {
   let member = null;
@@ -110,11 +179,11 @@ async function isNoctis(interaction, target) {
   return names.includes("noctis");
 }
 
-client.once("ready", () => {
-  console.log(`Discord Tomato Throw online as ${client.user.tag}`);
+client.once(Events.ClientReady, readyClient => {
+  console.log(`Discord Tomato Throw online as ${readyClient.user.tag}`);
 });
 
-client.on("interactionCreate", async interaction => {
+client.on(Events.InteractionCreate, async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
   const target = interaction.options.getUser("target");
@@ -127,14 +196,17 @@ client.on("interactionCreate", async interaction => {
       ? pickNoctisTomato()
       : pick(genericTomatoes);
 
-    const phrase = targetIsNoctis
-      ? pick(noctisTomatoPhrases)
-      : pick(tomatoPhrases);
-
     await interaction.reply({
-      content: phrase(interaction.user, target),
+      content: tomatoPhrase(
+        gif,
+        interaction.user,
+        target,
+        targetIsNoctis
+      ),
       files: [gif]
     });
+
+    return;
   }
 
   if (interaction.commandName === "pat") {
@@ -142,12 +214,13 @@ client.on("interactionCreate", async interaction => {
       ? pickNoctisPat()
       : pick(genericPats);
 
-    const phrase = targetIsNoctis
-      ? pick(noctisPatPhrases)
-      : pick(patPhrases);
-
     await interaction.reply({
-      content: phrase(interaction.user, target),
+      content: patPhrase(
+        gif,
+        interaction.user,
+        target,
+        targetIsNoctis
+      ),
       files: [gif]
     });
   }
