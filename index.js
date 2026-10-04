@@ -41,7 +41,7 @@ const regularNoctisPats = noctisPats.filter(file =>
   Persistent storage.
 
   Railway automatically provides RAILWAY_VOLUME_MOUNT_PATH
-  when the persistent volume is attached.
+  when a persistent volume is attached.
 */
 
 const DATA_DIR =
@@ -517,14 +517,6 @@ function buildGoodFloof(guildId) {
       b.patActivity - a.patActivity
     )[0];
 
-  /*
-    Pacifist:
-    Requires at least 5 pats given.
-
-    Score =
-    pats given - tomatoes thrown
-  */
-
   const pacifist = [...users]
     .filter(user => user.patsGiven >= 5)
     .map(user => ({
@@ -666,7 +658,7 @@ client.on(Events.InteractionCreate, async interaction => {
     return;
   }
 
-  if (interaction.commandName === "tomato-tally") {
+  if (interaction.commandName === "tomatotally") {
     await interaction.reply({
       content:
         buildTomatoTally(interaction.guildId)
@@ -675,14 +667,13 @@ client.on(Events.InteractionCreate, async interaction => {
     return;
   }
 
-  if (
-    interaction.commandName ===
-    "whoseagoodfloof"
-  ) {
+  if (interaction.commandName === "whosagoodfloof") {
     await interaction.reply({
       content:
         buildGoodFloof(interaction.guildId)
     });
+
+    return;
   }
 });
 
