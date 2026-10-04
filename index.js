@@ -45,9 +45,6 @@ const regularNoctisPats = noctisPats.filter(file =>
 
 /*
   Persistent storage.
-
-  Railway automatically provides RAILWAY_VOLUME_MOUNT_PATH
-  when a persistent volume is attached.
 */
 
 const DATA_DIR =
@@ -198,11 +195,9 @@ function tomatoResult(gif, noctis) {
   const name = path.basename(gif);
 
   if (!noctis) {
-    if (name === "tomato-lens-splat.gif") {
-      return "hit";
-    }
-
-    return "miss";
+    return name === "tomato-lens-splat.gif"
+      ? "hit"
+      : "miss";
   }
 
   const hitAnimations = new Set([
@@ -371,7 +366,8 @@ async function isNoctis(interaction, target) {
   let member = null;
 
   try {
-    member = await interaction.guild.members.fetch(target.id);
+    member =
+      await interaction.guild.members.fetch(target.id);
   } catch {}
 
   const names = [
@@ -380,7 +376,9 @@ async function isNoctis(interaction, target) {
     member?.displayName
   ]
     .filter(Boolean)
-    .map(name => name.trim().toLowerCase());
+    .map(name =>
+      name.trim().toLowerCase()
+    );
 
   return names.includes("noctis");
 }
@@ -392,124 +390,21 @@ function getServerUsers(guildId) {
     return [];
   }
 
-  return Object.entries(guildScores).map(([id, stats]) => ({
-    id,
-    name: stats.name,
-    timesHit: stats.timesHit ?? 0,
-    timesMissed: stats.timesMissed ?? 0,
-    throwsHit: stats.throwsHit ?? 0,
-    throwsMissed: stats.throwsMissed ?? 0,
-    patsGiven: stats.patsGiven ?? 0,
-    patsReceived: stats.patsReceived ?? 0
-  }));
-}
-
-function buildTomatoTallyEmbed(guildId) {
-  const users = getServerUsers(guildId)
-    .map(user => ({
-      ...user,
-      tomatoesThrown:
-        user.throwsHit +
-        user.throwsMissed
-    }))
-    .filter(user =>
-      user.timesHit +
-      user.timesMissed +
-      user.throwsHit +
-      user.throwsMissed >
-      0
-    )
-    .sort((a, b) =>
-      b.tomatoesThrown - a.tomatoesThrown
-    );
-
-  if (users.length === 0) {
-    return new EmbedBuilder()
-      .setTitle("🍅 Tomato Tally")
-      .setDescription(
-        "No tomatoes have been thrown here yet.\nThe produce remains peaceful."
-      );
-  }
-
-  const highest = stat =>
-    [...users]
-      .filter(user => user[stat] > 0)
-      .sort((a, b) =>
-        b[stat] - a[stat]
-      )[0];
-
-  const tomatoMagnet = highest("timesHit");
-  const sauceSniper = highest("throwsHit");
-  const airballArtist = highest("throwsMissed");
-  const cantTouchThis = highest("timesMissed");
-
-  const awards = [];
-
-  if (tomatoMagnet) {
-    awards.push(
-      `🧲🍅 **Tomato Magnet**\n<@${tomatoMagnet.id}> • ${tomatoMagnet.timesHit} splats`
-    );
-  }
-
-  if (sauceSniper) {
-    awards.push(
-      `🎯🍅 **Sauce Sniper**\n<@${sauceSniper.id}> • ${sauceSniper.throwsHit} hits`
-    );
-  }
-
-  if (airballArtist) {
-    awards.push(
-      `🌪️🍅 **Airball Artist**\n<@${airballArtist.id}> • ${airballArtist.throwsMissed} misses`
-    );
-  }
-
-  if (cantTouchThis) {
-    awards.push(
-      `🕺🍅 **Can't Touch This**\n<@${cantTouchThis.id}> • ${cantTouchThis.timesMissed} escapes`
-    );
-  }
-
-  const topUsers = users.slice(0, 15);
-
-  const leaderboard = topUsers
-    .map((user, index) => {
-      return [
-        `**${index + 1}. <@${user.id}>**`,
-        `🎯 ${user.throwsHit} hit  •  🥴 ${user.throwsMissed} missed`,
-        `💥 Hit ${user.timesHit}x  •  💨 Escaped ${user.timesMissed}x`
-      ].join("\n");
+  return Object.entries(guildScores).map(
+    ([id, stats]) => ({
+      id,
+      name: stats.name,
+      timesHit: stats.timesHit ?? 0,
+      timesMissed: stats.timesMissed ?? 0,
+      throwsHit: stats.throwsHit ?? 0,
+      throwsMissed: stats.throwsMissed ?? 0,
+      patsGiven: stats.patsGiven ?? 0,
+      patsReceived: stats.patsReceived ?? 0
     })
-    .join("\n\n");
-
-  const embed = new EmbedBuilder()
-    .setTitle("🍅🍅🍅 TOMATO TALLY 🍅🍅🍅")
-    .setDescription(
-      "An entirely unnecessary record of produce-related violence."
-    )
-    .addFields(
-      {
-        name: "🏆 QUESTIONABLE ACHIEVEMENTS",
-        value:
-          awards.length > 0
-            ? awards.join("\n\n")
-            : "No questionable achievements yet."
-      },
-      {
-        name: "🍅 TOP TOMATO PARTICIPANTS",
-        value: leaderboard
-      }
-    )
-    .setFooter({
-      text:
-        users.length > 15
-          ? `Showing top 15 of ${users.length} tomato participants`
-          : `${users.length} tomato participant${users.length === 1 ? "" : "s"}`
-    });
-
-  return embed;
+  );
 }
 
-function buildGoodFloofEmbed(guildId) {
+function getFloofAwards(guildId) {
   const users = getServerUsers(guildId)
     .map(user => ({
       ...user,
@@ -522,18 +417,7 @@ function buildGoodFloofEmbed(guildId) {
     }))
     .filter(user =>
       user.patActivity > 0
-    )
-    .sort((a, b) =>
-      b.patActivity - a.patActivity
     );
-
-  if (users.length === 0) {
-    return new EmbedBuilder()
-      .setTitle("🐾 Who's a Good Floof?")
-      .setDescription(
-        "Nobody has been patted yet.\nThis is unacceptable."
-      );
-  }
 
   const mostGiven = [...users]
     .filter(user =>
@@ -570,6 +454,166 @@ function buildGoodFloofEmbed(guildId) {
       b.pacifistScore - a.pacifistScore
     )[0];
 
+  return {
+    mostGiven,
+    mostReceived,
+    mostActivity,
+    pacifist
+  };
+}
+
+function buildTomatoTallyEmbed(guildId) {
+  const users = getServerUsers(guildId)
+    .map(user => ({
+      ...user,
+      tomatoesThrown:
+        user.throwsHit +
+        user.throwsMissed
+    }))
+    .filter(user =>
+      user.timesHit +
+      user.timesMissed +
+      user.throwsHit +
+      user.throwsMissed >
+      0
+    )
+    .sort((a, b) =>
+      b.tomatoesThrown - a.tomatoesThrown
+    );
+
+  if (users.length === 0) {
+    return new EmbedBuilder()
+      .setTitle("🍅 Tomato Tally")
+      .setDescription(
+        "No tomatoes have been thrown here yet.\nThe produce remains peaceful."
+      );
+  }
+
+  const highest = stat =>
+    [...users]
+      .filter(user =>
+        user[stat] > 0
+      )
+      .sort((a, b) =>
+        b[stat] - a[stat]
+      )[0];
+
+  const tomatoMagnet =
+    highest("timesHit");
+
+  const sauceSniper =
+    highest("throwsHit");
+
+  const airballArtist =
+    highest("throwsMissed");
+
+  const cantTouchThis =
+    highest("timesMissed");
+
+  const awards = [];
+
+  if (tomatoMagnet) {
+    awards.push(
+      `🧲🍅 **Tomato Magnet**\n<@${tomatoMagnet.id}> • ${tomatoMagnet.timesHit} splats`
+    );
+  }
+
+  if (sauceSniper) {
+    awards.push(
+      `🎯🍅 **Sauce Sniper**\n<@${sauceSniper.id}> • ${sauceSniper.throwsHit} hits`
+    );
+  }
+
+  if (airballArtist) {
+    awards.push(
+      `🌪️🍅 **Airball Artist**\n<@${airballArtist.id}> • ${airballArtist.throwsMissed} misses`
+    );
+  }
+
+  if (cantTouchThis) {
+    awards.push(
+      `🕺🍅 **Can't Touch This**\n<@${cantTouchThis.id}> • ${cantTouchThis.timesMissed} escapes`
+    );
+  }
+
+  const topUsers =
+    users.slice(0, 15);
+
+  const leaderboard = topUsers
+    .map((user, index) => {
+      return [
+        `**${index + 1}. <@${user.id}>**`,
+        `🎯 ${user.throwsHit} hit  •  🥴 ${user.throwsMissed} missed`,
+        `💥 Hit ${user.timesHit}x  •  💨 Escaped ${user.timesMissed}x`
+      ].join("\n");
+    })
+    .join("\n\n");
+
+  return new EmbedBuilder()
+    .setTitle(
+      "🍅🍅🍅 TOMATO TALLY 🍅🍅🍅"
+    )
+    .setDescription(
+      "An entirely unnecessary record of produce-related violence."
+    )
+    .addFields(
+      {
+        name:
+          "🏆 QUESTIONABLE ACHIEVEMENTS",
+        value:
+          awards.length > 0
+            ? awards.join("\n\n")
+            : "No questionable achievements yet."
+      },
+      {
+        name:
+          "🍅 TOP TOMATO PARTICIPANTS",
+        value: leaderboard
+      }
+    )
+    .setFooter({
+      text:
+        users.length > 15
+          ? `Showing top 15 of ${users.length} tomato participants`
+          : `${users.length} tomato participant${users.length === 1 ? "" : "s"}`
+    });
+}
+
+function buildGoodFloofEmbed(guildId) {
+  const users = getServerUsers(guildId)
+    .map(user => ({
+      ...user,
+      patActivity:
+        user.patsGiven +
+        user.patsReceived,
+      tomatoesThrown:
+        user.throwsHit +
+        user.throwsMissed
+    }))
+    .filter(user =>
+      user.patActivity > 0
+    )
+    .sort((a, b) =>
+      b.patActivity - a.patActivity
+    );
+
+  if (users.length === 0) {
+    return new EmbedBuilder()
+      .setTitle(
+        "🐾 Who's a Good Floof?"
+      )
+      .setDescription(
+        "Nobody has been patted yet.\nThis is unacceptable."
+      );
+  }
+
+  const {
+    mostGiven,
+    mostReceived,
+    mostActivity,
+    pacifist
+  } = getFloofAwards(guildId);
+
   const awards = [];
 
   if (mostGiven) {
@@ -596,7 +640,8 @@ function buildGoodFloofEmbed(guildId) {
     );
   }
 
-  const topUsers = users.slice(0, 15);
+  const topUsers =
+    users.slice(0, 15);
 
   const leaderboard = topUsers
     .map((user, index) => {
@@ -607,21 +652,25 @@ function buildGoodFloofEmbed(guildId) {
     })
     .join("\n\n");
 
-  const embed = new EmbedBuilder()
-    .setTitle("🐾✨ WHO'S A GOOD FLOOF? ✨🐾")
+  return new EmbedBuilder()
+    .setTitle(
+      "🐾✨ WHO'S A GOOD FLOOF? ✨🐾"
+    )
     .setDescription(
       "Officially unofficial records of excessive affection."
     )
     .addFields(
       {
-        name: "🏆 FLOOF HONORS",
+        name:
+          "🏆 FLOOF HONORS",
         value:
           awards.length > 0
             ? awards.join("\n\n")
             : "No floof honors yet."
       },
       {
-        name: "🐾 TOP FLOOFS",
+        name:
+          "🐾 TOP FLOOFS",
         value: leaderboard
       }
     )
@@ -631,124 +680,304 @@ function buildGoodFloofEmbed(guildId) {
           ? `Showing top 15 of ${users.length} floofs`
           : `${users.length} floof${users.length === 1 ? "" : "s"}`
     });
+}
+
+function buildFloofCheckEmbed(
+  guildId,
+  target
+) {
+  const users =
+    getServerUsers(guildId);
+
+  const user =
+    users.find(user =>
+      user.id === target.id
+    );
+
+  const stats = user ?? {
+    id: target.id,
+    patsGiven: 0,
+    patsReceived: 0,
+    throwsHit: 0,
+    throwsMissed: 0
+  };
+
+  const patActivity =
+    stats.patsGiven +
+    stats.patsReceived;
+
+  const tomatoesThrown =
+    stats.throwsHit +
+    stats.throwsMissed;
+
+  const awards =
+    getFloofAwards(guildId);
+
+  const heldAwards = [];
+
+  if (
+    awards.mostGiven?.id ===
+    target.id
+  ) {
+    heldAwards.push(
+      "🐾 **Purpetual Petter** 🐾"
+    );
+  }
+
+  if (
+    awards.mostReceived?.id ===
+    target.id
+  ) {
+    heldAwards.push(
+      "🫳 **Fluffiest** 🥰"
+    );
+  }
+
+  if (
+    awards.pacifist?.id ===
+    target.id
+  ) {
+    heldAwards.push(
+      "🇺🇳 **Pacifist** ☮️"
+    );
+  }
+
+  if (
+    awards.mostActivity?.id ===
+    target.id
+  ) {
+    heldAwards.push(
+      "✨ **Pat Enthusiast** ✨"
+    );
+  }
+
+  const embed = new EmbedBuilder()
+    .setTitle(
+      "🐾 FLOOF CHECK"
+    )
+    .setDescription(
+      `<@${target.id}>`
+    )
+    .addFields(
+      {
+        name: "🫳 Pats Given",
+        value:
+          String(stats.patsGiven),
+        inline: true
+      },
+      {
+        name: "🥰 Pats Received",
+        value:
+          String(stats.patsReceived),
+        inline: true
+      },
+      {
+        name: "✨ Pat Activity",
+        value:
+          String(patActivity),
+        inline: true
+      },
+      {
+        name: "🍅 Tomatoes Thrown",
+        value:
+          String(tomatoesThrown),
+        inline: true
+      }
+    );
+
+  if (heldAwards.length > 0) {
+    embed.addFields({
+      name: "🏆 Floof Honors",
+      value:
+        heldAwards.join("\n")
+    });
+  } else {
+    embed.addFields({
+      name: "🏆 Floof Honors",
+      value:
+        "No questionable floof titles yet."
+    });
+  }
 
   return embed;
 }
 
-client.once(Events.ClientReady, readyClient => {
-  console.log(
-    `Discord Tomato Throw online as ${readyClient.user.tag}`
-  );
-
-  console.log(
-    `Jester stats storage: ${SCORE_FILE}`
-  );
-});
-
-client.on(Events.InteractionCreate, async interaction => {
-  if (!interaction.isChatInputCommand()) return;
-
-  if (!interaction.guildId) {
-    await interaction.reply({
-      content:
-        "This command only works inside a server.",
-      ephemeral: true
-    });
-
-    return;
-  }
-
-  if (interaction.commandName === "tomato") {
-    const target =
-      interaction.options.getUser("target");
-
-    if (!target) return;
-
-    const targetIsNoctis =
-      await isNoctis(interaction, target);
-
-    const gif = targetIsNoctis
-      ? pickNoctisTomato()
-      : pickGenericTomato();
-
-    const result =
-      tomatoResult(gif, targetIsNoctis);
-
-    recordTomatoResult(
-      interaction.guildId,
-      interaction.user,
-      target,
-      result
+client.once(
+  Events.ClientReady,
+  readyClient => {
+    console.log(
+      `Discord Tomato Throw online as ${readyClient.user.tag}`
     );
 
-    await interaction.reply({
-      content: tomatoPhrase(
-        gif,
-        interaction.user,
-        target,
-        targetIsNoctis
-      ),
-      files: [gif]
-    });
-
-    return;
-  }
-
-  if (interaction.commandName === "pat") {
-    const target =
-      interaction.options.getUser("target");
-
-    if (!target) return;
-
-    const targetIsNoctis =
-      await isNoctis(interaction, target);
-
-    const gif = targetIsNoctis
-      ? pickNoctisPat()
-      : pick(genericPats);
-
-    recordPat(
-      interaction.guildId,
-      interaction.user,
-      target
+    console.log(
+      `Jester stats storage: ${SCORE_FILE}`
     );
+  }
+);
 
-    await interaction.reply({
-      content: patPhrase(
-        gif,
+client.on(
+  Events.InteractionCreate,
+  async interaction => {
+    if (
+      !interaction.isChatInputCommand()
+    ) {
+      return;
+    }
+
+    if (!interaction.guildId) {
+      await interaction.reply({
+        content:
+          "This command only works inside a server.",
+        ephemeral: true
+      });
+
+      return;
+    }
+
+    if (
+      interaction.commandName ===
+      "tomato"
+    ) {
+      const target =
+        interaction.options.getUser(
+          "target"
+        );
+
+      if (!target) return;
+
+      const targetIsNoctis =
+        await isNoctis(
+          interaction,
+          target
+        );
+
+      const gif =
+        targetIsNoctis
+          ? pickNoctisTomato()
+          : pickGenericTomato();
+
+      const result =
+        tomatoResult(
+          gif,
+          targetIsNoctis
+        );
+
+      recordTomatoResult(
+        interaction.guildId,
         interaction.user,
         target,
+        result
+      );
+
+      await interaction.reply({
+        content: tomatoPhrase(
+          gif,
+          interaction.user,
+          target,
+          targetIsNoctis
+        ),
+        files: [gif]
+      });
+
+      return;
+    }
+
+    if (
+      interaction.commandName ===
+      "pat"
+    ) {
+      const target =
+        interaction.options.getUser(
+          "target"
+        );
+
+      if (!target) return;
+
+      const targetIsNoctis =
+        await isNoctis(
+          interaction,
+          target
+        );
+
+      const gif =
         targetIsNoctis
-      ),
-      files: [gif]
-    });
+          ? pickNoctisPat()
+          : pick(genericPats);
 
-    return;
+      recordPat(
+        interaction.guildId,
+        interaction.user,
+        target
+      );
+
+      await interaction.reply({
+        content: patPhrase(
+          gif,
+          interaction.user,
+          target,
+          targetIsNoctis
+        ),
+        files: [gif]
+      });
+
+      return;
+    }
+
+    if (
+      interaction.commandName ===
+      "tomatotally"
+    ) {
+      await interaction.reply({
+        embeds: [
+          buildTomatoTallyEmbed(
+            interaction.guildId
+          )
+        ]
+      });
+
+      return;
+    }
+
+    if (
+      interaction.commandName ===
+      "whosagoodfloof"
+    ) {
+      await interaction.reply({
+        embeds: [
+          buildGoodFloofEmbed(
+            interaction.guildId
+          )
+        ]
+      });
+
+      return;
+    }
+
+    if (
+      interaction.commandName ===
+      "checkfloof"
+    ) {
+      const target =
+        interaction.options.getUser(
+          "target"
+        );
+
+      if (!target) return;
+
+      await interaction.reply({
+        embeds: [
+          buildFloofCheckEmbed(
+            interaction.guildId,
+            target
+          )
+        ]
+      });
+
+      return;
+    }
   }
+);
 
-  if (interaction.commandName === "tomatotally") {
-    await interaction.reply({
-      embeds: [
-        buildTomatoTallyEmbed(
-          interaction.guildId
-        )
-      ]
-    });
-
-    return;
-  }
-
-  if (interaction.commandName === "whosagoodfloof") {
-    await interaction.reply({
-      embeds: [
-        buildGoodFloofEmbed(
-          interaction.guildId
-        )
-      ]
-    });
-
-    return;
-  }
-});
-
-client.login(process.env.DISCORD_TOKEN);
+client.login(
+  process.env.DISCORD_TOKEN
+);
