@@ -72,15 +72,34 @@ function tomatoPhrase(gif, thrower, target, noctis) {
   const name = path.basename(gif);
 
   if (!noctis) {
-    const phrases = {
-      "tomato-lens-splat.gif":
-        `Direct hit! ${thrower} nailed ${target} with a tomato.`,
+    const hitPhrases = [
+      `Direct hit! ${thrower} nailed ${target} with a tomato.`,
+      `${thrower} threw a tomato and hit ${target} square on.`,
+      `${target} just took a tomato courtesy of ${thrower}.`,
+      `${thrower} landed a perfect tomato hit on ${target}.`,
+      `SPLAT! ${thrower} got ${target} with a tomato.`,
+      `${thrower}'s tomato found its target: ${target}.`,
+      `${target} never saw ${thrower}'s tomato coming.`,
+      `Bullseye! ${thrower} hit ${target} with a tomato.`
+    ];
 
-      "tomato-camera-miss.gif":
-        `${thrower} threw a tomato at ${target}... and completely missed.`
-    };
+    const missPhrases = [
+      `${thrower} threw a tomato at ${target}... and completely missed.`,
+      `${thrower} took a shot at ${target}, but the tomato sailed right past.`,
+      `${target} dodged ${thrower}'s tomato!`,
+      `${thrower} launched a tomato at ${target}. Close, but no splat.`,
+      `WHIFF! ${thrower} missed ${target} with the tomato.`
+    ];
 
-    return phrases[name] ?? `${thrower} threw a tomato at ${target}.`;
+    if (name === "tomato-lens-splat.gif") {
+      return pick(hitPhrases);
+    }
+
+    if (name === "tomato-camera-miss.gif") {
+      return pick(missPhrases);
+    }
+
+    return `${thrower} threw a tomato at ${target}.`;
   }
 
   const phrases = {
