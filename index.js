@@ -191,10 +191,11 @@ client.on(Events.InteractionCreate, async interaction => {
 
   const targetIsNoctis = await isNoctis(interaction, target);
 
-  if (interaction.commandName === "tomato") {
-    const gif = targetIsNoctis
-      ? pickNoctisTomato()
-      : pick(genericTomatoes);
+const gif = targetIsNoctis
+  ? pickNoctisTomato()
+  : Math.random() < 0.8
+    ? genericTomatoes.find(file => file.endsWith("tomato-lens-splat.gif"))
+    : genericTomatoes.find(file => file.endsWith("tomato-camera-miss.gif"));
 
     await interaction.reply({
       content: tomatoPhrase(
