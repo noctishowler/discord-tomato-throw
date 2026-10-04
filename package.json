@@ -1,0 +1,19 @@
+{
+  "name": "discord-tomato-throw",
+  "version": "2.0.0",
+  "description": "Discord /tomato and /pat interaction bot with Noctis name Easter eggs.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "deploy": "node deploy-commands.js",
+    "check": "node --check index.js && node --check deploy-commands.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "discord.js": "^14.22.1",
+    "dotenv": "^17.2.3"
+  }
+}
