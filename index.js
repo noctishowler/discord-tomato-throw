@@ -293,9 +293,9 @@ function createCircleMask(
 function createHandSvg() {
   return Buffer.from(`
     <svg
-      width="170"
-      height="170"
-      viewBox="0 0 170 170"
+      width="190"
+      height="120"
+      viewBox="0 0 190 120"
       xmlns="http://www.w3.org/2000/svg"
     >
       <g
@@ -305,57 +305,59 @@ function createHandSvg() {
         stroke-linejoin="round"
         stroke-linecap="round"
       >
+        <!-- Palm -->
+        <rect
+          x="48"
+          y="48"
+          width="112"
+          height="46"
+          rx="22"
+        />
 
+        <!-- Fingers laid flat -->
         <rect
           x="58"
-          y="66"
-          width="82"
-          height="83"
-          rx="34"
-        />
-
-        <rect
-          x="54"
-          y="15"
-          width="23"
-          height="78"
-          rx="12"
-        />
-
-        <rect
-          x="79"
-          y="7"
-          width="23"
-          height="84"
-          rx="12"
-        />
-
-        <rect
-          x="104"
-          y="13"
-          width="23"
-          height="80"
-          rx="12"
-        />
-
-        <rect
-          x="129"
-          y="27"
-          width="22"
-          height="68"
+          y="30"
+          width="88"
+          height="22"
           rx="11"
         />
 
+        <rect
+          x="68"
+          y="18"
+          width="78"
+          height="20"
+          rx="10"
+        />
+
+        <rect
+          x="78"
+          y="7"
+          width="68"
+          height="20"
+          rx="10"
+        />
+
+        <!-- Thumb -->
         <path
           d="
-            M62 92
-            C45 75 31 67 20 76
-            C10 84 17 98 29 110
-            L60 140
+            M54 62
+            C38 55 26 58 19 68
+            C12 78 20 89 35 90
+            L58 88
             Z
           "
         />
 
+        <!-- Wrist -->
+        <rect
+          x="132"
+          y="59"
+          width="45"
+          height="28"
+          rx="13"
+        />
       </g>
     </svg>
   `);
@@ -521,9 +523,9 @@ async function generateAvatarPatGif(
 
   const frames = [
     {
-      handX: 112,
-      handY: 0,
-      handRotation: -7,
+      handX: 96,
+      handY: 34,
+      handRotation: 0,
       avatarWidth: 190,
       avatarHeight: 190,
       avatarY: 176,
@@ -531,9 +533,9 @@ async function generateAvatarPatGif(
     },
 
     {
-      handX: 112,
-      handY: 8,
-      handRotation: -6,
+      handX: 96,
+      handY: 48,
+      handRotation: 0,
       avatarWidth: 190,
       avatarHeight: 190,
       avatarY: 176,
@@ -541,9 +543,9 @@ async function generateAvatarPatGif(
     },
 
     {
-      handX: 111,
-      handY: 22,
-      handRotation: -5,
+      handX: 96,
+      handY: 64,
+      handRotation: 0,
       avatarWidth: 190,
       avatarHeight: 190,
       avatarY: 176,
@@ -551,9 +553,9 @@ async function generateAvatarPatGif(
     },
 
     {
-      handX: 110,
-      handY: 50,
-      handRotation: -4,
+      handX: 96,
+      handY: 78,
+      handRotation: 0,
       avatarWidth: 194,
       avatarHeight: 181,
       avatarY: 185,
@@ -561,9 +563,9 @@ async function generateAvatarPatGif(
     },
 
     {
-      handX: 109,
-      handY: 66,
-      handRotation: -3,
+      handX: 96,
+      handY: 88,
+      handRotation: 0,
       avatarWidth: 202,
       avatarHeight: 164,
       avatarY: 202,
@@ -571,9 +573,9 @@ async function generateAvatarPatGif(
     },
 
     {
-      handX: 110,
-      handY: 57,
-      handRotation: -4,
+      handX: 96,
+      handY: 80,
+      handRotation: 0,
       avatarWidth: 196,
       avatarHeight: 177,
       avatarY: 189,
@@ -581,9 +583,9 @@ async function generateAvatarPatGif(
     },
 
     {
-      handX: 111,
-      handY: 30,
-      handRotation: -5,
+      handX: 96,
+      handY: 66,
+      handRotation: 0,
       avatarWidth: 191,
       avatarHeight: 187,
       avatarY: 179,
@@ -591,9 +593,9 @@ async function generateAvatarPatGif(
     },
 
     {
-      handX: 112,
-      handY: 8,
-      handRotation: -6,
+      handX: 96,
+      handY: 50,
+      handRotation: 0,
       avatarWidth: 190,
       avatarHeight: 190,
       avatarY: 176,
@@ -601,9 +603,9 @@ async function generateAvatarPatGif(
     },
 
     {
-      handX: 112,
-      handY: 0,
-      handRotation: -7,
+      handX: 96,
+      handY: 34,
+      handRotation: 0,
       avatarWidth: 190,
       avatarHeight: 190,
       avatarY: 176,
@@ -1722,10 +1724,6 @@ client.on(
           target
         );
 
-      /*
-        Noctis keeps custom animations
-      */
-
       if (targetIsNoctis) {
         const gif =
           pickNoctisPat();
@@ -1761,11 +1759,6 @@ client.on(
 
         return;
       }
-
-      /*
-        Everyone else gets
-        the avatar pat
-      */
 
       await interaction.deferReply();
 
@@ -1840,7 +1833,6 @@ client.on(
 
     /*
       /tomatotally
-      requester only
     */
 
     if (
@@ -1862,7 +1854,6 @@ client.on(
 
     /*
       /whosagoodfloof
-      requester only
     */
 
     if (
@@ -1884,7 +1875,6 @@ client.on(
 
     /*
       /checkfloof
-      requester only
     */
 
     if (
