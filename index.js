@@ -36,6 +36,22 @@ const regularNoctisPats = noctisPats.filter(file =>
   !file.endsWith("09-dont-stop-rare.gif")
 );
 
+function pickGenericTomato() {
+  const hit = genericTomatoes.find(file =>
+    file.endsWith("tomato-lens-splat.gif")
+  );
+
+  const miss = genericTomatoes.find(file =>
+    file.endsWith("tomato-camera-miss.gif")
+  );
+
+  if (hit && miss) {
+    return Math.random() < 0.8 ? hit : miss;
+  }
+
+  return hit ?? miss ?? pick(genericTomatoes);
+}
+
 function pickNoctisTomato() {
   if (giantTomato && Math.random() < 0.01) {
     return giantTomato;
@@ -191,11 +207,10 @@ client.on(Events.InteractionCreate, async interaction => {
 
   const targetIsNoctis = await isNoctis(interaction, target);
 
-const gif = targetIsNoctis
-  ? pickNoctisTomato()
-  : Math.random() < 0.8
-    ? genericTomatoes.find(file => file.endsWith("tomato-lens-splat.gif"))
-    : genericTomatoes.find(file => file.endsWith("tomato-camera-miss.gif"));
+  if (interaction.commandName === "tomato") {
+    const gif = targetIsNoctis
+      ? pickNoctisTomato()
+      : pickGenericTomato();
 
     await interaction.reply({
       content: tomatoPhrase(
