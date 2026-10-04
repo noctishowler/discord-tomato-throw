@@ -37,15 +37,22 @@ const regularNoctisPats = noctisPats.filter(file =>
 );
 
 /*
-  Tomato tally storage
+  Persistent tomato tally storage.
 
-  On Railway, set:
-  DATA_DIR=/data
+  Railway automatically provides RAILWAY_VOLUME_MOUNT_PATH
+  when a persistent volume is attached.
 
-  and mount a persistent volume at /data.
+  Fallbacks:
+  1. Railway mounted volume
+  2. DATA_DIR environment variable
+  3. Local ./data folder
 */
 
-const DATA_DIR = process.env.DATA_DIR || "./data";
+const DATA_DIR =
+  process.env.RAILWAY_VOLUME_MOUNT_PATH ||
+  process.env.DATA_DIR ||
+  "./data";
+
 const SCORE_FILE = path.join(DATA_DIR, "tomato-tally.json");
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -345,7 +352,7 @@ function buildTomatoTally(guildId) {
   const guildScores = scores[guildId];
 
   if (!guildScores || Object.keys(guildScores).length === 0) {
-    return "No tomatoes have been thrown here yet.";
+    return "🍅 No tomatoes have been thrown here yet. The produce remains peaceful.";
   }
 
   const users = Object.entries(guildScores)
@@ -362,24 +369,72 @@ function buildTomatoTally(guildId) {
     .sort((a, b) => b.activity - a.activity);
 
   if (users.length === 0) {
-    return "No tomatoes have been thrown here yet.";
+    return "🍅 No tomatoes have been thrown here yet. The produce remains peaceful.";
   }
 
   const sections = users.map(user => {
     return [
-      `<@${user.id}>`,
-      `Times hit: ${user.timesHit}`,
-      `Times missed: ${user.timesMissed}`,
-      `Throws hit: ${user.throwsHit}`,
-      `Throws missed: ${user.throwsMissed}`
+      `🍅 <@${user.id}>`,
+      `💥 Times hit: ${user.timesHit}`,
+      `💨 Times missed: ${user.timesMissed}`,
+      `🎯 Throws hit: ${user.throwsHit}`,
+      `🥴 Throws missed: ${user.throwsMissed}`
     ].join("\n");
   });
 
-  return `Tomato Tally\n\n${sections.join("\n\n")}`;
+  const highest = stat => {
+    return [...users]
+      .filter(user => user[stat] > 0)
+      .sort((a, b) => b[stat] - a[stat])[0];
+  };
+
+  const tomatoMagnet = highest("timesHit");
+  const sauceSniper = highest("throwsHit");
+  const airballArtist = highest("throwsMissed");
+  const cantTouchThis = highest("timesMissed");
+
+  const awards = [];
+
+  if (tomatoMagnet) {
+    awards.push(
+      `🧲🍅 **Tomato Magnet:** <@${tomatoMagnet.id}> (${tomatoMagnet.timesHit} splats)`
+    );
+  }
+
+  if (sauceSniper) {
+    awards.push(
+      `🎯🍅 **Sauce Sniper:** <@${sauceSniper.id}> (${sauceSniper.throwsHit} hits)`
+    );
+  }
+
+  if (airballArtist) {
+    awards.push(
+      `🌪️🍅 **Airball Artist:** <@${airballArtist.id}> (${airballArtist.throwsMissed} misses)`
+    );
+  }
+
+  if (cantTouchThis) {
+    awards.push(
+      `🕺🍅 **Can't Touch This:** <@${cantTouchThis.id}> (${cantTouchThis.timesMissed} tomatoes escaped)`
+    );
+  }
+
+  return [
+    "🍅🍅🍅 **TOMATO TALLY** 🍅🍅🍅",
+    "",
+    sections.join("\n\n"),
+    "",
+    "🏆 **QUESTIONABLE ACHIEVEMENTS** 🏆",
+    "",
+    awards.join("\n"),
+    "",
+    "🍅 Long live the produce."
+  ].join("\n");
 }
 
 client.once(Events.ClientReady, readyClient => {
   console.log(`Discord Tomato Throw online as ${readyClient.user.tag}`);
+  console.log(`Tomato tally storage: ${SCORE_FILE}`);
 });
 
 client.on(Events.InteractionCreate, async interaction => {
