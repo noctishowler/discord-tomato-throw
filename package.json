@@ -1,0 +1,15 @@
+{
+  "name": "discord-tomato-throw",
+  "version": "2.1.0",
+  "description": "Discord /tomato and /pat commands with Noctis Easter eggs.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "deploy": "node deploy-commands.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.22.1",
+    "dotenv": "^17.2.3"
+  }
+}
