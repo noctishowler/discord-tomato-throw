@@ -1,4 +1,10 @@
-import { Client, GatewayIntentBits, Events } from "discord.js";
+import {
+  Client,
+  GatewayIntentBits,
+  Events,
+  EmbedBuilder
+} from "discord.js";
+
 import fs from "fs";
 import path from "path";
 import "dotenv/config";
@@ -398,37 +404,39 @@ function getServerUsers(guildId) {
   }));
 }
 
-function buildTomatoTally(guildId) {
+function buildTomatoTallyEmbed(guildId) {
   const users = getServerUsers(guildId)
     .map(user => ({
       ...user,
-      tomatoActivity:
-        user.timesHit +
-        user.timesMissed +
+      tomatoesThrown:
         user.throwsHit +
         user.throwsMissed
     }))
-    .filter(user => user.tomatoActivity > 0)
+    .filter(user =>
+      user.timesHit +
+      user.timesMissed +
+      user.throwsHit +
+      user.throwsMissed >
+      0
+    )
     .sort((a, b) =>
-      b.tomatoActivity - a.tomatoActivity
+      b.tomatoesThrown - a.tomatoesThrown
     );
 
   if (users.length === 0) {
-    return "🍅 No tomatoes have been thrown here yet. The produce remains peaceful.";
+    return new EmbedBuilder()
+      .setTitle("🍅 Tomato Tally")
+      .setDescription(
+        "No tomatoes have been thrown here yet.\nThe produce remains peaceful."
+      );
   }
-
-  const sections = users.map(user => [
-    `🍅 <@${user.id}>`,
-    `💥 Times hit: ${user.timesHit}`,
-    `💨 Times missed: ${user.timesMissed}`,
-    `🎯 Throws hit: ${user.throwsHit}`,
-    `🥴 Throws missed: ${user.throwsMissed}`
-  ].join("\n"));
 
   const highest = stat =>
     [...users]
       .filter(user => user[stat] > 0)
-      .sort((a, b) => b[stat] - a[stat])[0];
+      .sort((a, b) =>
+        b[stat] - a[stat]
+      )[0];
 
   const tomatoMagnet = highest("timesHit");
   const sauceSniper = highest("throwsHit");
@@ -439,42 +447,69 @@ function buildTomatoTally(guildId) {
 
   if (tomatoMagnet) {
     awards.push(
-      `🧲🍅 **Tomato Magnet:** <@${tomatoMagnet.id}> (${tomatoMagnet.timesHit} splats)`
+      `🧲🍅 **Tomato Magnet**\n<@${tomatoMagnet.id}> • ${tomatoMagnet.timesHit} splats`
     );
   }
 
   if (sauceSniper) {
     awards.push(
-      `🎯🍅 **Sauce Sniper:** <@${sauceSniper.id}> (${sauceSniper.throwsHit} hits)`
+      `🎯🍅 **Sauce Sniper**\n<@${sauceSniper.id}> • ${sauceSniper.throwsHit} hits`
     );
   }
 
   if (airballArtist) {
     awards.push(
-      `🌪️🍅 **Airball Artist:** <@${airballArtist.id}> (${airballArtist.throwsMissed} misses)`
+      `🌪️🍅 **Airball Artist**\n<@${airballArtist.id}> • ${airballArtist.throwsMissed} misses`
     );
   }
 
   if (cantTouchThis) {
     awards.push(
-      `🕺🍅 **Can't Touch This:** <@${cantTouchThis.id}> (${cantTouchThis.timesMissed} escapes)`
+      `🕺🍅 **Can't Touch This**\n<@${cantTouchThis.id}> • ${cantTouchThis.timesMissed} escapes`
     );
   }
 
-  return [
-    "🍅🍅🍅 **TOMATO TALLY** 🍅🍅🍅",
-    "",
-    sections.join("\n\n"),
-    "",
-    "🏆 **QUESTIONABLE ACHIEVEMENTS** 🏆",
-    "",
-    awards.join("\n"),
-    "",
-    "🍅 Long live the produce."
-  ].join("\n");
+  const topUsers = users.slice(0, 15);
+
+  const leaderboard = topUsers
+    .map((user, index) => {
+      return [
+        `**${index + 1}. <@${user.id}>**`,
+        `🎯 ${user.throwsHit} hit  •  🥴 ${user.throwsMissed} missed`,
+        `💥 Hit ${user.timesHit}x  •  💨 Escaped ${user.timesMissed}x`
+      ].join("\n");
+    })
+    .join("\n\n");
+
+  const embed = new EmbedBuilder()
+    .setTitle("🍅🍅🍅 TOMATO TALLY 🍅🍅🍅")
+    .setDescription(
+      "An entirely unnecessary record of produce-related violence."
+    )
+    .addFields(
+      {
+        name: "🏆 QUESTIONABLE ACHIEVEMENTS",
+        value:
+          awards.length > 0
+            ? awards.join("\n\n")
+            : "No questionable achievements yet."
+      },
+      {
+        name: "🍅 TOP TOMATO PARTICIPANTS",
+        value: leaderboard
+      }
+    )
+    .setFooter({
+      text:
+        users.length > 15
+          ? `Showing top 15 of ${users.length} tomato participants`
+          : `${users.length} tomato participant${users.length === 1 ? "" : "s"}`
+    });
+
+  return embed;
 }
 
-function buildGoodFloof(guildId) {
+function buildGoodFloofEmbed(guildId) {
   const users = getServerUsers(guildId)
     .map(user => ({
       ...user,
@@ -485,29 +520,33 @@ function buildGoodFloof(guildId) {
         user.throwsHit +
         user.throwsMissed
     }))
-    .filter(user => user.patActivity > 0)
+    .filter(user =>
+      user.patActivity > 0
+    )
     .sort((a, b) =>
       b.patActivity - a.patActivity
     );
 
   if (users.length === 0) {
-    return "🐾 Nobody has been patted yet. This is unacceptable.";
+    return new EmbedBuilder()
+      .setTitle("🐾 Who's a Good Floof?")
+      .setDescription(
+        "Nobody has been patted yet.\nThis is unacceptable."
+      );
   }
 
-  const sections = users.map(user => [
-    `🐾 <@${user.id}>`,
-    `🫳 Pats given: ${user.patsGiven}`,
-    `🥰 Pats received: ${user.patsReceived}`
-  ].join("\n"));
-
   const mostGiven = [...users]
-    .filter(user => user.patsGiven > 0)
+    .filter(user =>
+      user.patsGiven > 0
+    )
     .sort((a, b) =>
       b.patsGiven - a.patsGiven
     )[0];
 
   const mostReceived = [...users]
-    .filter(user => user.patsReceived > 0)
+    .filter(user =>
+      user.patsReceived > 0
+    )
     .sort((a, b) =>
       b.patsReceived - a.patsReceived
     )[0];
@@ -518,7 +557,9 @@ function buildGoodFloof(guildId) {
     )[0];
 
   const pacifist = [...users]
-    .filter(user => user.patsGiven >= 5)
+    .filter(user =>
+      user.patsGiven >= 5
+    )
     .map(user => ({
       ...user,
       pacifistScore:
@@ -533,39 +574,65 @@ function buildGoodFloof(guildId) {
 
   if (mostGiven) {
     awards.push(
-      `🐾 **Purpetual Petter** 🐾: <@${mostGiven.id}> (${mostGiven.patsGiven} pats given)`
+      `🐾 **Purpetual Petter** 🐾\n<@${mostGiven.id}> • ${mostGiven.patsGiven} pats given`
     );
   }
 
   if (mostReceived) {
     awards.push(
-      `🫳 **Fluffiest** 🥰: <@${mostReceived.id}> (${mostReceived.patsReceived} pats received)`
+      `🫳 **Fluffiest** 🥰\n<@${mostReceived.id}> • ${mostReceived.patsReceived} pats received`
     );
   }
 
   if (pacifist) {
     awards.push(
-      `🇺🇳 **Pacifist** ☮️: <@${pacifist.id}> (${pacifist.patsGiven} pats, ${pacifist.tomatoesThrown} tomatoes thrown)`
+      `🇺🇳 **Pacifist** ☮️\n<@${pacifist.id}> • ${pacifist.patsGiven} pats • ${pacifist.tomatoesThrown} tomatoes thrown`
     );
   }
 
   if (mostActivity) {
     awards.push(
-      `✨ **Pat Enthusiast** ✨: <@${mostActivity.id}> (${mostActivity.patActivity} total pat activity)`
+      `✨ **Pat Enthusiast** ✨\n<@${mostActivity.id}> • ${mostActivity.patActivity} total pat activity`
     );
   }
 
-  return [
-    "🐾✨ **WHO'S A GOOD FLOOF?** ✨🐾",
-    "",
-    sections.join("\n\n"),
-    "",
-    "🏆 **FLOOF HONORS** 🏆",
-    "",
-    awards.join("\n"),
-    "",
-    "🥰 Yes. Yes you are."
-  ].join("\n");
+  const topUsers = users.slice(0, 15);
+
+  const leaderboard = topUsers
+    .map((user, index) => {
+      return [
+        `**${index + 1}. <@${user.id}>**`,
+        `🫳 Given: ${user.patsGiven}  •  🥰 Received: ${user.patsReceived}`
+      ].join("\n");
+    })
+    .join("\n\n");
+
+  const embed = new EmbedBuilder()
+    .setTitle("🐾✨ WHO'S A GOOD FLOOF? ✨🐾")
+    .setDescription(
+      "Officially unofficial records of excessive affection."
+    )
+    .addFields(
+      {
+        name: "🏆 FLOOF HONORS",
+        value:
+          awards.length > 0
+            ? awards.join("\n\n")
+            : "No floof honors yet."
+      },
+      {
+        name: "🐾 TOP FLOOFS",
+        value: leaderboard
+      }
+    )
+    .setFooter({
+      text:
+        users.length > 15
+          ? `Showing top 15 of ${users.length} floofs`
+          : `${users.length} floof${users.length === 1 ? "" : "s"}`
+    });
+
+  return embed;
 }
 
 client.once(Events.ClientReady, readyClient => {
@@ -583,7 +650,8 @@ client.on(Events.InteractionCreate, async interaction => {
 
   if (!interaction.guildId) {
     await interaction.reply({
-      content: "This command only works inside a server.",
+      content:
+        "This command only works inside a server.",
       ephemeral: true
     });
 
@@ -660,8 +728,11 @@ client.on(Events.InteractionCreate, async interaction => {
 
   if (interaction.commandName === "tomatotally") {
     await interaction.reply({
-      content:
-        buildTomatoTally(interaction.guildId)
+      embeds: [
+        buildTomatoTallyEmbed(
+          interaction.guildId
+        )
+      ]
     });
 
     return;
@@ -669,8 +740,11 @@ client.on(Events.InteractionCreate, async interaction => {
 
   if (interaction.commandName === "whosagoodfloof") {
     await interaction.reply({
-      content:
-        buildGoodFloof(interaction.guildId)
+      embeds: [
+        buildGoodFloofEmbed(
+          interaction.guildId
+        )
+      ]
     });
 
     return;
